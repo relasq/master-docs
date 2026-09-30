@@ -1,0 +1,743 @@
+openapi: 3.1.0
+info:
+  title: Master API
+  version: 1.0.0
+  description: API pública da Master para cobranças e transferências Pix. Valores monetários são inteiros em centavos.
+servers:
+  - url: https://api2.loopbot.app/api/v1/public
+    description: Produção, após configurar DNS e HTTPS
+  - url: http://127.0.0.1:4000/api/v1/public
+    description: Desenvolvimento local
+security:
+  - bearerAuth: []
+tags:
+  - name: Conta
+    description: Saldo e limites da conta
+  - name: Pagamentos
+    description: Consulta de operações
+  - name: Cobranças Pix
+    description: Criação de cobranças
+  - name: Transferências Pix
+    description: Transferências com confirmação por código
+  - name: Operações de negócio
+    description: Até 10 negócios com saldos e históricos independentes
+paths:
+  /account:
+    get:
+      tags:
+        - Conta
+      operationId: getAccount
+      summary: Consultar conta
+      description: Exige read. O saldo é o último valor confirmado do negócio selecionado.
+      responses:
+        "200":
+          description: Estado da conta
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Account"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/RateLimit"
+    parameters:
+      - $ref: "#/components/parameters/BusinessOperationHeader"
+  /payments:
+    get:
+      tags:
+        - Pagamentos
+      operationId: listPayments
+      summary: Listar pagamentos
+      description: Exige read. Retorna até 100 pagamentos do negócio selecionado.
+      responses:
+        "200":
+          description: Operações recentes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PaymentOperation"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/RateLimit"
+    parameters:
+      - $ref: "#/components/parameters/BusinessOperationHeader"
+  /payments/{id}:
+    parameters:
+      - $ref: "#/components/parameters/OperationId"
+      - $ref: "#/components/parameters/BusinessOperationHeader"
+    get:
+      tags:
+        - Pagamentos
+      operationId: getPayment
+      summary: Consultar pagamento
+      description: Exige permissão `read`. Retorna apenas operações pertencentes à conta da key.
+      responses:
+        "200":
+          description: Operação encontrada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaymentOperation"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/RateLimit"
+  /pix/charges:
+    post:
+      tags:
+        - Cobranças Pix
+      operationId: createPixCharge
+      summary: Criar cobrança Pix
+      description: Exige permissão `charges`. Preserve o mesmo `requestKey` ao repetir a mesma cobrança.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateCharge"
+            example:
+              amountCents: 10000
+              payerName: Ana Souza
+              description: Pedido 123
+              requestKey: 1c35e888-9ab1-43c1-ac74-66e9be46c450
+      responses:
+        "201":
+          description: Cobrança criada ou operação idempotente recuperada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaymentOperation"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/RateLimit"
+        "503":
+          $ref: "#/components/responses/Unavailable"
+    parameters:
+      - $ref: "#/components/parameters/BusinessOperationHeader"
+  /pix/transfers:
+    post:
+      tags:
+        - Transferências Pix
+      operationId: preparePixTransfer
+      summary: Preparar transferência Pix
+      description: Exige permissão `transfers`. Envia um código de confirmação ao e-mail verificado da conta. Não envia o Pix até a confirmação.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateTransfer"
+            example:
+              amountCents: 5000
+              pixKey: recebedor@exemplo.com
+              pixKeyType: EMAIL
+              description: Repasse
+              requestKey: 4b2acc8a-b838-4640-956b-131da49588a4
+      responses:
+        "201":
+          description: Rascunho criado; código enviado ao e-mail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaymentOperation"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/RateLimit"
+        "503":
+          $ref: "#/components/responses/Unavailable"
+    parameters:
+      - $ref: "#/components/parameters/BusinessOperationHeader"
+  /pix/transfers/{id}/confirm:
+    parameters:
+      - $ref: "#/components/parameters/OperationId"
+      - $ref: "#/components/parameters/BusinessOperationHeader"
+    post:
+      tags:
+        - Transferências Pix
+      operationId: confirmPixTransfer
+      summary: Confirmar transferência Pix
+      description: Exige permissão `transfers`. O código de seis dígitos expira em 10 minutos e admite até cinco tentativas incorretas.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - code
+              additionalProperties: false
+              properties:
+                code:
+                  type: string
+                  pattern: ^\d{6}$
+                  example: "123456"
+      responses:
+        "201":
+          description: Transferência submetida ou estado atual retornado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaymentOperation"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/RateLimit"
+        "503":
+          $ref: "#/components/responses/Unavailable"
+  /pix/transfers/{id}/cancel:
+    parameters:
+      - $ref: "#/components/parameters/OperationId"
+      - $ref: "#/components/parameters/BusinessOperationHeader"
+    post:
+      tags:
+        - Transferências Pix
+      operationId: cancelPixTransfer
+      summary: Cancelar transferência não confirmada
+      description: "Exige permissão `transfers`. Só cancela a operação enquanto o status for `draft`. Envie `Content-Type: application/json` e corpo `{}`."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+            example: {}
+      responses:
+        "201":
+          description: Transferência cancelada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaymentOperation"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/RateLimit"
+        "503":
+          $ref: "#/components/responses/Unavailable"
+  /operations:
+    get:
+      tags:
+        - Operações de negócio
+      operationId: listBusinessOperations
+      summary: Listar operações de negócio
+      description: Exige read. Lista os negócios e seus saldos independentes.
+      responses:
+        "200":
+          description: Operações da conta
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  limit:
+                    type: integer
+                    const: 10
+                  operations:
+                    type: array
+                    maxItems: 10
+                    items:
+                      $ref: "#/components/schemas/BusinessOperation"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "429":
+          $ref: "#/components/responses/RateLimit"
+    post:
+      tags:
+        - Operações de negócio
+      operationId: createBusinessOperation
+      summary: Criar operação de negócio
+      description: Exige operations. Limite de 10 incluindo a principal. requestKey torna a criação idempotente.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required:
+                - name
+                - requestKey
+              properties:
+                name:
+                  type: string
+                  minLength: 2
+                  maxLength: 64
+                requestKey:
+                  type: string
+                  format: uuid
+      responses:
+        "201":
+          description: Operação criada ou recuperada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BusinessOperation"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "429":
+          $ref: "#/components/responses/RateLimit"
+  /operations/{id}:
+    parameters:
+      - $ref: "#/components/parameters/BusinessOperationId"
+    patch:
+      tags:
+        - Operações de negócio
+      operationId: renameBusinessOperation
+      summary: Renomear operação de negócio
+      description: Exige operations. Não altera saldo nem histórico.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required:
+                - name
+              properties:
+                name:
+                  type: string
+                  minLength: 2
+                  maxLength: 64
+      responses:
+        "200":
+          description: Operação renomeada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BusinessOperation"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/RateLimit"
+webhooks:
+  masterPaymentEvent:
+    post:
+      tags:
+        - Pagamentos
+      operationId: masterPaymentEvent
+      summary: Evento de pagamento enviado ao seu endpoint
+      description: Verifique `X-Master-Signature` com o segredo `whsec_...` antes de processar. Responda 2xx em até 8 segundos.
+      parameters:
+        - in: header
+          name: X-Master-Signature
+          required: true
+          schema:
+            type: string
+            example: t=1760000000,v1=0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+        - in: header
+          name: X-Master-Delivery
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WebhookEvent"
+      responses:
+        "200":
+          description: Evento aceito pelo seu servidor
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      description: API key criada em Integrações → Keys. Exemplo `mk_live_...`.
+  parameters:
+    OperationId:
+      name: id
+      in: path
+      required: true
+      description: UUID da operação Master
+      schema:
+        type: string
+        format: uuid
+    BusinessOperationHeader:
+      name: X-Master-Operation
+      in: header
+      required: false
+      description: UUID do negócio selecionado. Sem este header, utiliza a operação principal.
+      schema:
+        type: string
+        format: uuid
+    BusinessOperationId:
+      name: id
+      in: path
+      required: true
+      description: UUID do negócio Master
+      schema:
+        type: string
+        format: uuid
+  responses:
+    BadRequest:
+      description: Dados inválidos ou conflito de idempotência
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    Unauthorized:
+      description: API key ausente, inválida ou revogada
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    Forbidden:
+      description: Permissão insuficiente
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    NotFound:
+      description: Operação não encontrada nesta conta
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    RateLimit:
+      description: Limite temporário de requisições
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    Unavailable:
+      description: Processamento indisponível; preserve a referência e consulte a mesma operação antes de repetir.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+  schemas:
+    Account:
+      type: object
+      required:
+        - enabled
+        - balanceCents
+        - balanceUpdatedAt
+        - minimumDepositCents
+        - maximumDepositCents
+        - operationId
+        - feeCents
+        - heldBalanceCents
+        - withdrawalsFrozen
+      properties:
+        enabled:
+          type: boolean
+          description: Se o processamento de pagamentos está habilitado
+        balanceCents:
+          type: integer
+          example: 9750
+        balanceUpdatedAt:
+          type:
+            - integer
+            - "null"
+          description: Última sincronização do saldo, em milissegundos Unix
+        minimumDepositCents:
+          type: integer
+          example: 200
+        maximumDepositCents:
+          type: integer
+          example: 200000
+        operationId:
+          type: string
+          format: uuid
+          description: Identificador do negócio
+        feeCents:
+          type: integer
+          minimum: 0
+        heldBalanceCents:
+          type: integer
+          minimum: 0
+          description: Retenção administrativa do negócio principal, em centavos
+        withdrawalsFrozen:
+          type: boolean
+          description: Bloqueio de saques da conta ou plataforma
+    CreateCharge:
+      type: object
+      additionalProperties: false
+      required:
+        - amountCents
+        - payerName
+        - description
+        - requestKey
+      properties:
+        amountCents:
+          type: integer
+          minimum: 200
+          maximum: 200000
+          example: 10000
+        payerName:
+          type: string
+          minLength: 2
+          maxLength: 100
+        description:
+          type: string
+          maxLength: 200
+          description: Use string vazia quando não houver descrição
+        requestKey:
+          type: string
+          format: uuid
+          description: UUID estável para repetir esta mesma cobrança sem duplicar
+    CreateTransfer:
+      type: object
+      additionalProperties: false
+      required:
+        - amountCents
+        - pixKey
+        - pixKeyType
+        - description
+        - requestKey
+      properties:
+        amountCents:
+          type: integer
+          minimum: 500
+          maximum: 1000000
+        pixKey:
+          type: string
+          minLength: 3
+          maxLength: 150
+        pixKeyType:
+          type: string
+          enum:
+            - EMAIL
+            - CPF
+            - CNPJ
+            - PHONE
+            - RANDOM
+        description:
+          type: string
+          maxLength: 80
+        requestKey:
+          type: string
+          format: uuid
+    PaymentOperation:
+      type: object
+      required:
+        - id
+        - kind
+        - amountCents
+        - status
+        - createdAt
+        - operationId
+        - feeCents
+        - updatedAt
+        - settledAt
+      properties:
+        id:
+          type: string
+          format: uuid
+        kind:
+          type: string
+          enum:
+            - deposit
+            - transfer
+        amountCents:
+          type: integer
+        status:
+          type: string
+          enum:
+            - draft
+            - unknown
+            - pending
+            - paid
+            - completed
+            - failed
+            - expired
+            - cancelled
+        createdAt:
+          type: string
+          format: date-time
+        copyPaste:
+          type: string
+          description: Código Pix copia e cola quando fornecido pelo provedor
+        qrCodeBase64:
+          type: string
+          description: Data URL PNG com QR Code quando fornecida pelo provedor
+        endToEnd:
+          type: string
+        notice:
+          type: string
+        operationId:
+          type: string
+          format: uuid
+          description: Identificador do negócio
+        feeCents:
+          type:
+            - integer
+            - "null"
+          minimum: 0
+          description: Tarifa da conta registrada na criação
+        updatedAt:
+          type: string
+          format: date-time
+        settledAt:
+          type:
+            - string
+            - "null"
+          format: date-time
+        providerFeeCents:
+          type: integer
+          minimum: 0
+          description: Tarifa confirmada pelo processamento quando informada
+        netAmountCents:
+          type: integer
+          minimum: 0
+          description: Valor líquido confirmado pelo processamento quando informado
+    WebhookEvent:
+      type: object
+      required:
+        - id
+        - type
+        - createdAt
+        - data
+      properties:
+        id:
+          type: string
+          format: uuid
+        type:
+          type: string
+          enum:
+            - payment.pending
+            - payment.paid
+            - payment.expired
+            - payment.failed
+            - transfer.pending
+            - transfer.completed
+            - transfer.failed
+            - transfer.cancelled
+        createdAt:
+          type: string
+          format: date-time
+        data:
+          type: object
+          required:
+            - id
+            - kind
+            - status
+            - amountCents
+            - createdAt
+            - updatedAt
+            - operationId
+          properties:
+            id:
+              type: string
+              format: uuid
+            kind:
+              type: string
+              enum:
+                - deposit
+                - transfer
+            status:
+              type: string
+            amountCents:
+              type: integer
+            createdAt:
+              type: string
+              format: date-time
+            updatedAt:
+              type: string
+              format: date-time
+            operationId:
+              type: string
+              format: uuid
+    Error:
+      type: object
+      properties:
+        statusCode:
+          type: integer
+        message:
+          oneOf:
+            - type: string
+            - type: array
+              items:
+                type: string
+    BusinessOperation:
+      type: object
+      required:
+        - id
+        - name
+        - isDefault
+        - balanceCents
+        - createdAt
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          minLength: 2
+          maxLength: 64
+        isDefault:
+          type: boolean
+        balanceCents:
+          type: integer
+          minimum: 0
+        balanceUpdatedAt:
+          type:
+            - integer
+            - "null"
+        createdAt:
+          type: integer

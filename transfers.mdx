@@ -1,0 +1,29 @@
+---
+title: "Transferências Pix"
+description: "Envie Pix com confirmação por código de e-mail."
+---
+
+Uma transferência exige uma key com permissão `transfers` e saldo suficiente. O valor é enviado em `amountCents`, entre **R$ 5,00** e **R$ 10.000,00**.
+
+Envie `X-Master-Operation` para sacar de um negócio específico. Use o mesmo header na preparação, confirmação, consulta e cancelamento. O saldo de outra operação não cobre uma transferência; bloqueios de saque da conta continuam aplicáveis a todos os negócios.
+
+## Taxa da conta
+
+A tarifa padrão da Master é **0% + R$ 0,25 por recebimento ou saque concluído**. A conta pode ter uma tarifa negociada diferente. O campo `feeCents` da operação registra a tarifa da conta no momento da criação, em centavos; mudanças posteriores não alteram esse registro. Operações antigas sem esse registro retornam `null`.
+
+O campo `netAmountCents`, quando presente, contém o valor líquido confirmado pelo processamento. Não calcule o valor efetivamente liquidado apenas pela tarifa configurada.
+
+## Fluxo
+
+1. Chame `POST /pix/transfers` com valor, chave Pix, tipo, descrição e `requestKey` UUID.
+2. A operação será criada como `draft`. A Master enviará um código de seis dígitos ao e-mail verificado da conta.
+3. Chame `POST /pix/transfers/{id}/confirm` com `{ "code": "123456" }` em até 10 minutos.
+4. Consulte `GET /payments/{id}` ou receba o evento `transfer.completed` no webhook.
+
+São aceitos os tipos `EMAIL`, `CPF`, `CNPJ`, `PHONE` e `RANDOM`. CPF e CNPJ devem conter apenas dígitos; telefone usa formato internacional iniciado por `+`; a chave aleatória usa UUID.
+
+O código admite até cinco tentativas incorretas. `POST /pix/transfers/{id}/cancel` cancela somente uma transferência ainda em `draft`.
+
+<Warning>
+Uma transferência com status `unknown` pode já ter sido enviada. Consulte a mesma operação; não crie outra com um `requestKey` novo para tentar substituir a anterior.
+</Warning>

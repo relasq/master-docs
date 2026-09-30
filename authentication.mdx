@@ -1,0 +1,33 @@
+---
+title: "Autenticação e keys"
+description: "Como proteger as API keys e escolher permissões."
+---
+
+Todas as rotas da API pública exigem:
+
+```http
+Authorization: Bearer mk_live_...
+```
+
+As keys são criadas em **Integrações → Keys** no painel autenticado. O valor completo aparece **somente na criação**. A Master armazena um hash da key; por isso não é possível recuperá-la depois. Revogue uma key exposta e gere outra.
+
+## Permissões
+
+| Permissão | Rotas |
+| --- | --- |
+| `read` | Consultar conta, listar pagamentos, buscar pagamento e listar operações de negócio. |
+| `charges` | Criar cobrança Pix. |
+| `transfers` | Preparar, confirmar e cancelar transferência Pix. |
+| `operations` | Criar e renomear operações de negócio. |
+
+Uma key sem a permissão exigida recebe HTTP `403`. Uma key ausente, inválida ou revogada recebe HTTP `401`.
+
+## Boas práticas
+
+- Armazene a key apenas no backend ou em um cofre de segredos.
+- Use keys separadas por integração e conceda somente as permissões necessárias.
+- Use HTTPS em produção.
+- Nunca inclua a key em URL, logs, repositórios ou código frontend.
+- Revogue a key no painel quando não for mais necessária.
+
+As requisições autenticadas têm limite de **120 por minuto por key**. Algumas operações têm limites adicionais descritos em [erros e limites](/errors-and-limits).

@@ -1,0 +1,51 @@
+{
+  "$schema": "https://mintlify.com/docs.json",
+  "name": "Master Developers",
+  "theme": "palm",
+  "colors": {
+    "primary": "#3498ff",
+    "light": "#3498ff",
+    "dark": "#3498ff"
+  },
+  "logo": {
+    "light": "/master-logo.png",
+    "dark": "/master-logo.png"
+  },
+  "favicon": "/master-logo.png",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Guias",
+        "groups": [
+          {
+            "group": "Comece aqui",
+            "pages": [
+              "index",
+              "quickstart",
+              "authentication"
+            ]
+          },
+          {
+            "group": "Pagamentos",
+            "pages": [
+              "operations",
+              "pix-payments",
+              "transfers"
+            ]
+          },
+          {
+            "group": "Operação",
+            "pages": [
+              "webhooks",
+              "errors-and-limits"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Referência da API",
+        "openapi": "openapi.yaml"
+      }
+    ]
+  }
+}

@@ -1,0 +1,44 @@
+---
+title: "Operações de negócio"
+description: "Separe negócios com nomes, saldos e pagamentos independentes."
+---
+
+Uma conta Master pode ter **até 10 operações**, incluindo a **operação principal**. Cada operação possui um nome editável, saldo próprio e histórico separado de recebimentos e saques. O histórico anterior permanece na principal. As condições da conta, as API keys e os webhooks são compartilhados.
+
+No painel, use o seletor no topo da sidebar ou **Gerenciar operações**. A seleção é lembrada neste navegador.
+
+## Listar operações
+
+`GET /operations` exige a permissão `read` e retorna `{ limit: 10, operations: [...] }`. Cada item contém `id`, `name`, `isDefault`, `balanceCents`, `balanceUpdatedAt` e `createdAt`.
+
+## Criar pela API
+
+Crie uma key com a permissão **`operations`** em **Integrações → Keys**. Chaves existentes não ganham essa permissão automaticamente.
+
+```bash
+curl https://api2.loopbot.app/api/v1/public/operations \
+  -H "Authorization: Bearer $MASTER_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Minha loja","requestKey":"c5a0aad5-a09f-455b-a081-bdbb3e5398a7"}'
+```
+
+O nome deve ter de 2 a 64 caracteres. Preserve o mesmo `requestKey` UUID ao repetir a mesma criação: isso evita negócios duplicados, mesmo após renomear a operação. Ao atingir 10, a criação retorna HTTP `400`. O limite também vale para chamadas simultâneas.
+
+## Renomear
+
+`PATCH /operations/{id}` com `{ "name": "Novo nome" }` exige `operations`. Renomear não altera o saldo, os pagamentos ou o identificador.
+
+## Selecionar a operação para pagamentos
+
+Envie o ID do negócio no header em todas as chamadas de saldo, cobranças, consultas, preparação, confirmação e cancelamento de saque:
+
+```http
+Authorization: Bearer mk_live_...
+X-Master-Operation: c5a0aad5-a09f-455b-a081-bdbb3e5398a7
+```
+
+Sem esse header, a API usa a operação principal. Um UUID inválido retorna `400`; uma operação fora da conta retorna `404`. Não reutilize um `requestKey` de pagamento em outro negócio: a referência é única por conta.
+
+Cada pagamento informa `operationId`; cada evento de webhook inclui esse ID em `data.operationId`. Use esse campo para identificar o negócio na sua integração. Para consultar o pagamento ou confirmar um saque, mantenha o mesmo header usado na criação.
+
+Criar um negócio não movimenta dinheiro. A subconta da liquidante é vinculada na primeira operação financeira. Saques só utilizam o saldo do negócio selecionado; um negócio não cobre saldo insuficiente de outro. Restrições de saque da conta e bloqueios globais continuam valendo em todos os negócios.

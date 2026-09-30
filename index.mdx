@@ -1,0 +1,25 @@
+---
+title: "Master API"
+description: "Crie cobranças Pix, acompanhe pagamentos e receba eventos em tempo real."
+---
+
+# Pagamentos com uma API direta
+
+A Master oferece uma API JSON para criar cobranças Pix, consultar operações, conferir o saldo e preparar transferências com confirmação por e-mail. As respostas de pagamentos representam operações da **sua conta**; uma API key de outra conta nunca acessa esses registros.
+
+| Recurso | O que faz |
+| --- | --- |
+| Cobranças Pix | Gera QR Code e código copia e cola para uma cobrança. |
+| Consulta de operações | Retorna status e detalhes das últimas operações ou de uma operação específica. |
+| Conta | Informa saldo disponível e limites de cobrança. |
+| Transferências | Prepara um Pix e exige código enviado ao e-mail verificado antes de enviar. |
+| Webhooks | Entrega eventos assinados para seu endpoint HTTPS. |
+| Operações de negócio | Cria e renomeia até 10 negócios com saldos e históricos separados. |
+
+**Base URL:** `https://api2.loopbot.app/api/v1/public`
+
+<Note>
+O endereço `api2.loopbot.app` precisa estar apontado para a implantação da API Master com HTTPS antes de ser usado em produção. Para desenvolvimento local, use `http://127.0.0.1:4000/api/v1/public`.
+</Note>
+
+Comece pelo [guia rápido](/quickstart), gere uma key no painel em **Integrações → Keys** e cadastre um endpoint em **Integrações → Webhooks**.

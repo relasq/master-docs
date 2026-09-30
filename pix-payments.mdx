@@ -1,0 +1,30 @@
+---
+title: "Cobranças Pix"
+description: "Criação, estados, valores e idempotência das cobranças."
+---
+
+## Valores e dados
+
+O campo `amountCents` é um inteiro em centavos. Cobranças aceitam de **R$ 2,00** a **R$ 2.000,00**. `payerName` deve ter de 2 a 100 caracteres; `description` pode ter até 200 caracteres e pode ser uma string vazia.
+
+## Idempotência
+
+Cada criação exige `requestKey`, um UUID gerado pela sua aplicação. Repetir a mesma requisição com o mesmo UUID retorna a mesma operação. Reutilizar o UUID com outro valor ou outros dados gera erro. Isso evita cobrar duas vezes após timeout ou perda de resposta.
+
+## Estados
+
+| Status | Significado |
+| --- | --- |
+| `unknown` | A Master ainda não confirmou a resposta do provedor. Consulte o mesmo ID. |
+| `pending` | Pix gerado e aguardando pagamento. |
+| `paid` | Pagamento confirmado. |
+| `expired` | Cobrança expirada. |
+| `failed` | O provedor recusou ou não conseguiu criar a cobrança. |
+
+Uma resposta `pending` pode conter `copyPaste` e `qrCodeBase64` (data URL PNG). Esses campos são opcionais: use a operação retornada e consulte novamente quando necessário.
+
+## Consultas
+
+`GET /payments/{id}` busca uma operação da sua conta. `GET /payments` retorna até 100 operações recentes. Para automatizar a atualização de status, use [webhooks](/webhooks). Nunca marque um pedido como pago apenas porque o Pix foi gerado.
+
+Todas essas rotas utilizam o negócio indicado por `X-Master-Operation`, ou a principal quando omitido. O pagamento retorna `operationId`; mantenha o mesmo header na criação e nas consultas. Não reutilize um `requestKey` em outro negócio.

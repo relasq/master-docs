@@ -1,0 +1,48 @@
+---
+title: "Guia rápido"
+description: "Da API key ao primeiro Pix e ao recebimento de eventos."
+---
+
+## 1. Gere uma API key
+
+No painel Master, abra **Integrações → Keys**, escolha um nome e marque as permissões **Leitura** e **Cobranças**. Copie a chave exibida uma única vez. Guarde-a em uma variável de ambiente do seu servidor, nunca no código do navegador.
+
+```bash
+export MASTER_API_KEY="mk_live_..."
+```
+
+## 2. Consulte a conta
+
+```bash
+curl https://api2.loopbot.app/api/v1/public/account \
+  -H "Authorization: Bearer $MASTER_API_KEY"
+```
+
+A resposta inclui `operationId`, `enabled`, `balanceCents`, `feeCents`, `minimumDepositCents` e `maximumDepositCents`. Um saldo pode estar momentaneamente desatualizado até a reconciliação do provedor. Sem `X-Master-Operation`, todas as chamadas usam a principal; para outro negócio, envie esse header com seu ID nas consultas e escritas. Consulte [operações de negócio](/operations).
+
+## 3. Crie uma cobrança Pix
+
+Crie um UUID e preserve o mesmo `requestKey` em qualquer repetição da mesma cobrança.
+
+```bash
+curl -X POST https://api2.loopbot.app/api/v1/public/pix/charges \
+  -H "Authorization: Bearer $MASTER_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "amountCents": 10000,
+    "payerName": "Ana Souza",
+    "description": "Pedido 123",
+    "requestKey": "1c35e888-9ab1-43c1-ac74-66e9be46c450"
+  }'
+```
+
+`amountCents: 10000` corresponde a R$ 100,00. A operação pode retornar `pending`, com `copyPaste` e `qrCodeBase64`, ou `unknown` se a resposta do provedor ainda precisar ser reconciliada. **Não crie outra cobrança com um novo UUID quando o resultado for incerto.** Consulte o mesmo ID ou repita a solicitação com o mesmo `requestKey`.
+
+## 4. Acompanhe o status
+
+```bash
+curl https://api2.loopbot.app/api/v1/public/payments/ID_DA_OPERACAO \
+  -H "Authorization: Bearer $MASTER_API_KEY"
+```
+
+O status `paid` confirma uma cobrança. Para notificações automáticas, configure um [webhook](/webhooks). Seu servidor deve verificar a assinatura antes de processar cada evento.

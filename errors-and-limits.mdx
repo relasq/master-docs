@@ -1,0 +1,19 @@
+---
+title: "Erros e limites"
+description: "Códigos HTTP, formatos de erro e comportamento de repetição."
+---
+
+As respostas de erro usam JSON com `message` e `statusCode`. Erros de validação podem retornar uma lista em `message`.
+
+| HTTP | Significado |
+| --- | --- |
+| `400` | Corpo inválido, valor fora do limite, referência reutilizada com outros dados ou chave Pix inválida. |
+| `401` | API key ausente, inválida ou revogada; código de transferência inválido ou expirado. |
+| `403` | A key não tem permissão para a rota. |
+| `404` | Operação não encontrada na sua conta. |
+| `429` | Limite temporário de requisições. |
+| `503` | Serviço de pagamentos momentaneamente indisponível. |
+
+Limites atuais: **120 chamadas/minuto por key**, **10 criações de cobrança/minuto por conta**, **3 preparações de transferência/hora por conta**, **20 tentativas de confirmação a cada 10 minutos**, **30 criações de negócio/hora** e **60 renomeações de negócio/hora**. Uma conta pode manter até **10 negócios incluindo a principal**. O código de transferência permite até cinco erros e expira em 10 minutos.
+
+Ao receber uma resposta incerta ou timeout após criar uma cobrança, repita **a mesma requisição com o mesmo `requestKey`**. Para transferências, consulte o ID da operação antes de tomar qualquer nova ação.

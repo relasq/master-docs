@@ -1,0 +1,41 @@
+---
+title: "Webhooks"
+description: "Cadastre um endpoint, valide assinaturas e trate entregas repetidas."
+---
+
+No painel, abra **Integrações → Webhooks** e cadastre uma URL **HTTPS pública na porta 443**. A Master gera um segredo `whsec_...`, exibido uma vez. Guarde-o no seu servidor. Endereços privados, localhost, IP literal e redirecionamentos não são aceitos.
+
+## Eventos
+
+| Tipo | Quando ocorre |
+| --- | --- |
+| `payment.pending` | Cobrança Pix aguardando pagamento. |
+| `payment.paid` | Cobrança confirmada. |
+| `payment.expired` / `payment.failed` | Cobrança encerrada sem pagamento. |
+| `transfer.pending` | Transferência autorizada e em processamento. |
+| `transfer.completed` | Transferência confirmada. |
+| `transfer.failed` / `transfer.cancelled` | Transferência encerrada sem conclusão. |
+
+Cada POST usa JSON com `id` (ID do evento), `type`, `createdAt` e `data` (`id` do pagamento, `operationId` do negócio, `kind`, `status`, `amountCents`, `createdAt`, `updatedAt`). Os endpoints recebem eventos de todos os negócios da conta; use `data.operationId` para identificá-los. O mesmo evento mantém o mesmo corpo e ID nas tentativas de entrega.
+
+## Assinatura
+
+O header `X-Master-Signature` tem o formato `t=UNIX_SECONDS,v1=HEX_HMAC`. Calcule HMAC-SHA256 com o segredo do endpoint sobre **`t + "." + corpo bruto da requisição`**. Compare em tempo constante e rejeite timestamps com diferença superior a cinco minutos. Não analise e serialize novamente o JSON antes de verificar: isso altera os bytes assinados.
+
+```ts
+import { createHmac, timingSafeEqual } from "node:crypto";
+
+function verify(rawBody: Buffer, header: string, secret: string) {
+  const match = /^t=(\d+),v1=([a-f0-9]{64})$/.exec(header);
+  if (!match || Math.abs(Date.now() / 1000 - Number(match[1])) > 300) return false;
+  const expected = createHmac("sha256", secret)
+    .update(`${match[1]}.`).update(rawBody).digest();
+  return timingSafeEqual(expected, Buffer.from(match[2], "hex"));
+}
+```
+
+## Entrega e repetição
+
+Responda com HTTP **2xx em até 8 segundos**. Falhas e timeouts são reenviados com espera crescente, por até oito tentativas. Use o `id` do evento ou `X-Master-Delivery` para deduplicar. Antes de liberar bens ou serviços, confirme que `data.status` é `paid` para uma cobrança e que a operação pertence à sua conta.
+
+Você pode girar o segredo no painel. O segredo antigo deixa de assinar tentativas futuras; atualize sua aplicação ao girar.
