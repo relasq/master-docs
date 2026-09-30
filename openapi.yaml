@@ -285,6 +285,15 @@ paths:
                     maxItems: 10
                     items:
                       $ref: "#/components/schemas/BusinessOperation"
+                    minItems: 1
+                  ownerId:
+                    type: string
+                    format: uuid
+                    description: ID estável da conta
+                required:
+                  - ownerId
+                  - limit
+                  - operations
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -372,6 +381,45 @@ paths:
           $ref: "#/components/responses/NotFound"
         "429":
           $ref: "#/components/responses/RateLimit"
+    delete:
+      tags:
+        - Operações de negócio
+      operationId: deleteBusinessOperation
+      summary: Excluir operação de negócio
+      description: Exige operations. Mantém pelo menos uma operação ativa. Exige saldo zerado confirmado e nenhum pagamento em andamento. Preserva histórico para auditoria; a principal é substituída automaticamente quando excluída. Repetir a exclusão do mesmo ID é idempotente.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+            example: {}
+      responses:
+        "200":
+          description: Operação excluída ou exclusão já concluída
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - ok
+                properties:
+                  ok:
+                    type: boolean
+                    const: true
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/RateLimit"
+        "503":
+          $ref: "#/components/responses/Unavailable"
 webhooks:
   masterPaymentEvent:
     post:

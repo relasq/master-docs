@@ -13,6 +13,6 @@ Conecte este repositório ao projeto Mintlify e configure `docs2.loopbot.app` co
 
 ## Contrato
 
-As rotas públicas incluem consulta de conta e pagamentos, cobranças Pix, preparação/confirmação/cancelamento de transferências e listagem/criação/renomeação de operações de negócio. `X-Master-Operation` seleciona o negócio; sem ele, usa a principal. As keys são geradas no painel web, em `https://master.loopbot.app/dashboard/integrations/keys`.
+As rotas públicas incluem consulta de conta e pagamentos, cobranças Pix, preparação/confirmação/cancelamento de transferências e listagem/criação/renomeação/exclusão de operações de negócio. `X-Master-Operation` seleciona o negócio; sem ele, usa a principal atual. Sempre permanece pelo menos um negócio ativo. As keys são geradas no painel web, em `https://master.loopbot.app/dashboard/integrations/keys`.
 
 O OpenAPI documenta somente rotas de integração com bearer key. Rotas de sessão, administração e configuração do painel são internas à aplicação e estão descritas no repositório da API.

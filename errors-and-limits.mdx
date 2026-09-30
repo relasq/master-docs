@@ -14,6 +14,6 @@ As respostas de erro usam JSON com `message` e `statusCode`. Erros de validaçã
 | `429` | Limite temporário de requisições. |
 | `503` | Serviço de pagamentos momentaneamente indisponível. |
 
-Limites atuais: **120 chamadas/minuto por key**, **10 criações de cobrança/minuto por conta**, **3 preparações de transferência/hora por conta**, **20 tentativas de confirmação a cada 10 minutos**, **30 criações de negócio/hora** e **60 renomeações de negócio/hora**. Uma conta pode manter até **10 negócios incluindo a principal**. O código de transferência permite até cinco erros e expira em 10 minutos.
+Limites atuais: **120 chamadas/minuto por key**, **10 criações de cobrança/minuto por conta**, **3 preparações de transferência/hora por conta**, **20 tentativas de confirmação a cada 10 minutos**, **30 criações de negócio/hora**, **30 exclusões de negócio/hora** e **60 renomeações de negócio/hora**. Uma conta mantém entre **1 e 10 negócios incluindo a principal**. O código de transferência permite até cinco erros e expira em 10 minutos.
 
 Ao receber uma resposta incerta ou timeout após criar uma cobrança, repita **a mesma requisição com o mesmo `requestKey`**. Para transferências, consulte o ID da operação antes de tomar qualquer nova ação.

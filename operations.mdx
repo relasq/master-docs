@@ -9,7 +9,7 @@ No painel, use o seletor no topo da sidebar ou **Gerenciar operações**. A sele
 
 ## Listar operações
 
-`GET /operations` exige a permissão `read` e retorna `{ limit: 10, operations: [...] }`. Cada item contém `id`, `name`, `isDefault`, `balanceCents`, `balanceUpdatedAt` e `createdAt`.
+`GET /operations` exige a permissão `read` e retorna `{ ownerId, limit: 10, operations: [...] }`. `ownerId` é o identificador estável da conta, mesmo quando a principal muda. Cada item contém `id`, `name`, `isDefault`, `balanceCents`, `balanceUpdatedAt` e `createdAt`.
 
 ## Criar pela API
 
@@ -27,6 +27,23 @@ O nome deve ter de 2 a 64 caracteres. Preserve o mesmo `requestKey` UUID ao repe
 ## Renomear
 
 `PATCH /operations/{id}` com `{ "name": "Novo nome" }` exige `operations`. Renomear não altera o saldo, os pagamentos ou o identificador.
+
+## Excluir
+
+`DELETE /operations/{id}` exige `operations`. Envie `Content-Type: application/json` e corpo `{}`. A resposta de sucesso é HTTP `200` com `{ "ok": true }`.
+
+```bash
+curl -X DELETE https://api2.loopbot.app/api/v1/public/operations/ID_DO_NEGOCIO \
+  -H "Authorization: Bearer $MASTER_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{}'
+```
+
+A conta mantém **pelo menos uma operação**. A exclusão é bloqueada enquanto houver saldo, retenção administrativa ou pagamentos/saques não concluídos. O saldo da subconta é confirmado com a liquidante; se a consulta falhar, a exclusão retorna `503`. Esses bloqueios e o limite mínimo também valem para chamadas simultâneas.
+
+Se a principal for excluída, o negócio restante mais antigo se torna a principal. Chamadas sem `X-Master-Operation` passam a usar essa nova principal. A exclusão libera uma vaga no limite de 10. Repetir a exclusão do mesmo ID retorna sucesso, sem remover outra operação.
+
+O negócio deixa de aparecer no painel e na listagem, mas seus registros financeiros são preservados para auditoria. Não é possível renomeá-lo, selecioná-lo ou criar pagamentos nele; essas chamadas retornam `404`. Um `requestKey` usado para criar um negócio excluído não pode ser reutilizado para recriá-lo.
 
 ## Selecionar a operação para pagamentos
 
