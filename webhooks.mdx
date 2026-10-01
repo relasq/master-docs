@@ -18,6 +18,8 @@ No painel, abra **Integrações → Webhooks** e cadastre uma URL **HTTPS públi
 
 Cada POST usa JSON com `id` (ID do evento), `type`, `createdAt` e `data` (`id` do pagamento, `operationId` do negócio, `kind`, `status`, `amountCents`, `createdAt`, `updatedAt`). Os endpoints recebem eventos de todos os negócios da conta; use `data.operationId` para identificá-los. O mesmo evento mantém o mesmo corpo e ID nas tentativas de entrega.
 
+Novos saques podem incluir `data.debitAmountCents` (total descontado), `data.feeCents` (tarifa da conta), `data.expectedNetAmountCents` (líquido previsto) e `data.netAmountCents` (líquido informado pela liquidante). Para saques, `amountCents` é o valor bruto com a taxa incluída. Em `transfer.completed`, consulte o líquido confirmado; não desconte a taxa novamente.
+
 ## Assinatura
 
 O header `X-Master-Signature` tem o formato `t=UNIX_SECONDS,v1=HEX_HMAC`. Calcule HMAC-SHA256 com o segredo do endpoint sobre **`t + "." + corpo bruto da requisição`**. Compare em tempo constante e rejeite timestamps com diferença superior a cinco minutos. Não analise e serialize novamente o JSON antes de verificar: isso altera os bytes assinados.

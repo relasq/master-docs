@@ -148,7 +148,7 @@ paths:
         - Transferências Pix
       operationId: preparePixTransfer
       summary: Preparar transferência Pix
-      description: Exige permissão `transfers`. Envia um código de confirmação ao e-mail verificado da conta. Não envia o Pix até a confirmação.
+      description: Exige permissão `transfers`. amountCents é o total descontado do saldo com a taxa incluída, mínimo 1000 centavos. Retorna debitAmountCents e expectedNetAmountCents. Envia um código ao e-mail verificado e só envia o Pix após a confirmação.
       requestBody:
         required: true
         content:
@@ -531,6 +531,9 @@ components:
         - feeCents
         - heldBalanceCents
         - withdrawalsFrozen
+        - minimumWithdrawalCents
+        - maximumWithdrawalCents
+        - reservedWithdrawalCents
       properties:
         enabled:
           type: boolean
@@ -538,6 +541,7 @@ components:
         balanceCents:
           type: integer
           example: 9750
+          description: Saldo disponível após reservas de saque, retenções administrativas e margem da Master
         balanceUpdatedAt:
           type:
             - integer
@@ -549,6 +553,16 @@ components:
         maximumDepositCents:
           type: integer
           example: 200000
+        minimumWithdrawalCents:
+          type: integer
+          const: 1000
+        maximumWithdrawalCents:
+          type: integer
+          const: 1000000
+        reservedWithdrawalCents:
+          type: integer
+          minimum: 0
+          description: Saldo reservado para saques autorizados ainda não reconciliados
         operationId:
           type: string
           format: uuid
@@ -601,8 +615,9 @@ components:
       properties:
         amountCents:
           type: integer
-          minimum: 500
+          minimum: 1000
           maximum: 1000000
+          description: Total descontado do saldo, incluindo a taxa do saque
         pixKey:
           type: string
           minLength: 3
@@ -694,6 +709,14 @@ components:
           type: integer
           minimum: 0
           description: Valor líquido confirmado pelo processamento quando informado
+        debitAmountCents:
+          type: integer
+          minimum: 1000
+          description: Débito bruto do novo saque, com a tarifa da conta incluída
+        expectedNetAmountCents:
+          type: integer
+          minimum: 1
+          description: Valor previsto para o destinatário, igual ao débito bruto menos a tarifa da conta
     WebhookEvent:
       type: object
       required:
@@ -742,6 +765,18 @@ components:
               type: string
             amountCents:
               type: integer
+            debitAmountCents:
+              type: integer
+              description: Total descontado em novos saques
+            feeCents:
+              type: integer
+              minimum: 0
+            expectedNetAmountCents:
+              type: integer
+              minimum: 1
+            netAmountCents:
+              type: integer
+              minimum: 0
             createdAt:
               type: string
               format: date-time
