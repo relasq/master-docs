@@ -16,7 +16,7 @@ No painel, use o seletor no topo da sidebar ou **Gerenciar operações**. A sele
 Crie uma key com a permissão **`operations`** em **Integrações → Keys**. Chaves existentes não ganham essa permissão automaticamente.
 
 ```bash
-curl https://api2.loopbot.app/api/v1/public/operations \
+curl https://api.pagmaster.site/api/v1/public/operations \
   -H "Authorization: Bearer $MASTER_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{"name":"Minha loja","requestKey":"c5a0aad5-a09f-455b-a081-bdbb3e5398a7"}'
@@ -33,7 +33,7 @@ O nome deve ter de 2 a 64 caracteres. Preserve o mesmo `requestKey` UUID ao repe
 `DELETE /operations/{id}` exige `operations`. Envie `Content-Type: application/json` e corpo `{}`. A resposta de sucesso é HTTP `200` com `{ "ok": true }`.
 
 ```bash
-curl -X DELETE https://api2.loopbot.app/api/v1/public/operations/ID_DO_NEGOCIO \
+curl -X DELETE https://api.pagmaster.site/api/v1/public/operations/ID_DO_NEGOCIO \
   -H "Authorization: Bearer $MASTER_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{}'

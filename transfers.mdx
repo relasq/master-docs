@@ -10,7 +10,7 @@ description: "Envios automáticos com API key, reserva de saldo e consulta de st
 Envie `X-Master-Operation` para selecionar o negócio. O saldo de outro negócio não cobre o saque. Bloqueios administrativos da conta e da plataforma também se aplicam aos envios por API.
 
 ```bash
-curl -X POST https://api2.loopbot.app/api/v1/public/pix/transfers \
+curl -X POST https://api.pagmaster.site/api/v1/public/pix/transfers \
   -H "Authorization: Bearer $MASTER_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{

@@ -8,7 +8,7 @@ description: "Crie um checkout hospedado, consulte a aprovação e acompanhe a l
 `POST /card/charges` exige permissão `charges`. Aceita de **R$ 5,00 a R$ 2.000,00**, em centavos inteiros, e pagamento **à vista**. O cliente informa os dados do cartão exclusivamente no checkout hospedado da Z.PAY. A Master não recebe número completo, CVV ou dados 3D Secure.
 
 ```bash
-curl -X POST https://api2.loopbot.app/api/v1/public/card/charges \
+curl -X POST https://api.pagmaster.site/api/v1/public/card/charges \
   -H "Authorization: Bearer $MASTER_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{

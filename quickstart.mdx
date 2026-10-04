@@ -14,7 +14,7 @@ export MASTER_API_KEY="mk_live_..."
 ## 2. Consulte a conta
 
 ```bash
-curl https://api2.loopbot.app/api/v1/public/account \
+curl https://api.pagmaster.site/api/v1/public/account \
   -H "Authorization: Bearer $MASTER_API_KEY"
 ```
 
@@ -25,7 +25,7 @@ A resposta inclui `operationId`, `enabled`, `balanceCents`, `feeCents`, `cardFee
 Crie um UUID e preserve o mesmo `requestKey` em qualquer repetição da mesma cobrança.
 
 ```bash
-curl -X POST https://api2.loopbot.app/api/v1/public/pix/charges \
+curl -X POST https://api.pagmaster.site/api/v1/public/pix/charges \
   -H "Authorization: Bearer $MASTER_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
@@ -41,7 +41,7 @@ curl -X POST https://api2.loopbot.app/api/v1/public/pix/charges \
 ## 4. Acompanhe o status
 
 ```bash
-curl https://api2.loopbot.app/api/v1/public/payments/ID_DA_OPERACAO \
+curl https://api.pagmaster.site/api/v1/public/payments/ID_DA_OPERACAO \
   -H "Authorization: Bearer $MASTER_API_KEY"
 ```
 
