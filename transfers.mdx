@@ -1,33 +1,49 @@
 ---
 title: "Transferências Pix"
-description: "Envie Pix com confirmação por código de e-mail."
+description: "Envios automáticos com API key, reserva de saldo e consulta de status."
 ---
 
-Uma transferência exige uma key com permissão `transfers` e saldo suficiente. `amountCents` é o **total descontado do saldo, incluindo a taxa**, entre **R$ 10,00** e **R$ 10.000,00**. O mínimo se aplica à solicitação bruta, não ao Pix líquido.
+## Envio automático pela API
 
-Envie `X-Master-Operation` para sacar de um negócio específico. Use o mesmo header na preparação, confirmação, consulta e cancelamento. O saldo de outra operação não cobre uma transferência; bloqueios de saque da conta continuam aplicáveis a todos os negócios.
+`POST /pix/transfers` envia um Pix usando uma API key com permissão `transfers`. **Não envia código de e-mail e não exige uma chamada de confirmação.** A key autoriza a movimentação. Guarde-a no servidor e conceda essa permissão somente às integrações que precisam sacar.
 
-## Taxa da conta
+Envie `X-Master-Operation` para selecionar o negócio. O saldo de outro negócio não cobre o saque. Bloqueios administrativos da conta e da plataforma também se aplicam aos envios por API.
 
-A tarifa padrão da Master é **0% + R$ 0,25 por recebimento ou saque concluído**. A conta pode ter uma tarifa negociada diferente. O campo `feeCents` da operação registra a tarifa da conta no momento da criação, em centavos; mudanças posteriores não alteram esse registro. Operações antigas sem esse registro retornam `null`.
+```bash
+curl -X POST https://api2.loopbot.app/api/v1/public/pix/transfers \
+  -H "Authorization: Bearer $MASTER_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "amountCents": 1000,
+    "pixKey": "recebedor@exemplo.com",
+    "pixKeyType": "EMAIL",
+    "description": "Repasse do pedido 123",
+    "requestKey": "4b2acc8a-b838-4640-956b-131da49588a4"
+  }'
+```
 
-Na preparação, `debitAmountCents` informa o débito total e `expectedNetAmountCents` informa o valor previsto para o destinatário: `amountCents - feeCents`. Exemplo com a tarifa padrão: solicitação de `1000` centavos, taxa de `25` centavos e Pix líquido de `975` centavos. O custo negociado com a liquidante já é considerado pela Master; não some outra taxa ao valor do usuário.
+`amountCents` é o **total descontado do saldo, incluindo a taxa**: mínimo `1000` (R$ 10,00) e máximo `1000000` (R$ 10.000,00). Tipos de chave: `EMAIL`, `CPF`, `CNPJ`, `PHONE` e `RANDOM`. CPF/CNPJ usam só dígitos; telefone começa com `+`; chave aleatória usa UUID.
 
-`netAmountCents`, quando presente, é o valor líquido informado pela liquidante. Use o status `completed` para confirmar a conclusão. Uma alteração na tarifa da liquidante exige atualizar os custos no admin antes de preparar novos saques; divergências entre o líquido previsto e confirmado devem ser reconciliadas.
+## Taxa e reserva
 
-O saldo é reservado atomicamente ao autorizar o saque e permanece indisponível enquanto o resultado é incerto ou pendente. O saldo disponível não inclui essa reserva nem a margem da Master retida na subconta. Um saque recusado ou cancelado libera a reserva sem cobrar a taxa. Repetir a mesma operação não cobra novamente. Solicitações antigas em `draft`, criadas antes desta regra, devem ser canceladas e recriadas para conferir os novos valores; movimentações já enviadas mantêm seus valores originais.
+A taxa padrão de saque é **0% + R$ 0,25**, podendo variar conforme a conta. O registro guarda `feeCents` na criação. Alterações posteriores não mudam um saque já criado.
 
-## Fluxo
+Uma solicitação de `1000` centavos com taxa `25` retorna `debitAmountCents: 1000` e `expectedNetAmountCents: 975`: desconta R$ 10,00 e o destinatário recebe R$ 9,75. `netAmountCents`, quando informado pela liquidante, é o líquido confirmado. Não desconte a taxa outra vez.
 
-1. Chame `POST /pix/transfers` com valor, chave Pix, tipo, descrição e `requestKey` UUID.
-2. A operação será criada como `draft`. A Master enviará um código de seis dígitos ao e-mail verificado da conta.
-3. Chame `POST /pix/transfers/{id}/confirm` com `{ "code": "123456" }` em até 10 minutos.
-4. Consulte `GET /payments/{id}` ou receba o evento `transfer.completed` no webhook.
+O saldo bruto é reservado atomicamente antes do envio. Repetir os mesmos dados com o mesmo `requestKey` não reserva nem envia novamente. Saques recusados ou cancelados pelo provedor liberam a reserva sem taxa. Saques pendentes ou incertos continuam reservados até a conciliação.
 
-São aceitos os tipos `EMAIL`, `CPF`, `CNPJ`, `PHONE` e `RANDOM`. CPF e CNPJ devem conter apenas dígitos; telefone usa formato internacional iniciado por `+`; a chave aleatória usa UUID.
+## Consulta de status
 
-O código admite até cinco tentativas incorretas. `POST /pix/transfers/{id}/cancel` cancela somente uma transferência ainda em `draft`.
+Consulte `GET /payments/{id}` ou receba `transfer.completed` pelo [webhook](/webhooks). `pending` indica processamento; `completed` confirma o envio. A consulta não autoriza nem confirma manualmente um pagamento.
+
+O webhook é a primeira fonte de atualização. Após 5 segundos sem atualização, a Master agenda consultas autenticadas à liquidante; falhas usam espera crescente e limite compartilhado de consultas. Esse acompanhamento também funciona sem um navegador aberto.
 
 <Warning>
-Uma transferência com status `unknown` pode já ter sido enviada. Consulte a mesma operação; não crie outra com um `requestKey` novo para tentar substituir a anterior.
+Um timeout ou `unknown` pode indicar que o Pix já foi enviado. Preserve o mesmo `requestKey` e consulte a mesma operação. Nunca gere outro UUID para substituir um envio incerto.
 </Warning>
+
+## Compatibilidade com rascunhos antigos
+
+`POST /pix/transfers/{id}/confirm` e `/cancel` permanecem somente para rascunhos legados em `draft`. **Não fazem parte do novo fluxo automático.** Uma referência usada em um rascunho com código não pode ser reutilizada para um envio automático.
+
+A página Transferir do painel continua com confirmação por e-mail. Essa proteção do acesso pelo site é independente da autorização por API key.

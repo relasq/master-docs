@@ -21,10 +21,10 @@ Cada criação exige `requestKey`, um UUID gerado pela sua aplicação. Repetir 
 | `expired` | Cobrança expirada. |
 | `failed` | O provedor recusou ou não conseguiu criar a cobrança. |
 
-Uma resposta `pending` pode conter `copyPaste` e `qrCodeBase64` (data URL PNG). Esses campos são opcionais: use a operação retornada e consulte novamente quando necessário.
+Uma resposta `pending` pode conter `copyPaste` e `qrCodeBase64` (data URL PNG). Esses campos são opcionais: use a operação retornada e consulte novamente quando necessário. `paymentMethod` é `pix`; `expiresAt` informa a expiração quando retornada pela liquidante e é `null` quando ela não fornece esse prazo. `paidAt` e `endToEnd` podem aparecer após a liquidação. A Master não inventa uma data de expiração.
 
 ## Consultas
 
-`GET /payments/{id}` busca uma operação da sua conta. `GET /payments` retorna até 100 operações recentes. Para automatizar a atualização de status, use [webhooks](/webhooks). Nunca marque um pedido como pago apenas porque o Pix foi gerado.
+`GET /payments/{id}` busca uma operação da sua conta. `GET /payments` retorna até 100 operações recentes. O [webhook](/webhooks) é a primeira fonte de atualização. Após 5 segundos sem atualização, a Master agenda `GET /payments/{paymentId}` autenticado na Z.PAY. O processo funciona mesmo sem consultas do seu aplicativo; erros usam espera crescente e consultas têm limite compartilhado. `GET /payments/{id}` retorna o último estado conciliado e também tenta atualizar quando a consulta está vencida. Consultar o status não confirma manualmente a cobrança e não exige código de e-mail. Nunca marque um pedido como pago apenas porque o Pix foi gerado.
 
 Todas essas rotas utilizam o negócio indicado por `X-Master-Operation`, ou a principal quando omitido. O pagamento retorna `operationId`; mantenha o mesmo header na criação e nas consultas. Não reutilize um `requestKey` em outro negócio.

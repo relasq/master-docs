@@ -16,8 +16,8 @@ As keys são criadas em **Integrações → Keys** no painel autenticado. O valo
 | Permissão | Rotas |
 | --- | --- |
 | `read` | Consultar conta, listar pagamentos, buscar pagamento e listar operações de negócio. |
-| `charges` | Criar cobrança Pix. |
-| `transfers` | Preparar, confirmar e cancelar transferência Pix. |
+| `charges` | Criar cobranças Pix e cartão. |
+| `transfers` | Enviar transferência Pix automaticamente; confirmar ou cancelar somente rascunhos legados. |
 | `operations` | Criar, renomear e excluir operações de negócio. |
 
 Uma key sem a permissão exigida recebe HTTP `403`. Uma key ausente, inválida ou revogada recebe HTTP `401`.

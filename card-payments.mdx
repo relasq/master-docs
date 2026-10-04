@@ -1,0 +1,53 @@
+---
+title: "Cartão de crédito"
+description: "Crie um checkout hospedado, consulte a aprovação e acompanhe a liberação do saldo."
+---
+
+## Criar cobrança
+
+`POST /card/charges` exige permissão `charges`. Aceita de **R$ 5,00 a R$ 2.000,00**, em centavos inteiros, e pagamento **à vista**. O cliente informa os dados do cartão exclusivamente no checkout hospedado da Z.PAY. A Master não recebe número completo, CVV ou dados 3D Secure.
+
+```bash
+curl -X POST https://api2.loopbot.app/api/v1/public/card/charges \
+  -H "Authorization: Bearer $MASTER_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "amountCents": 4990,
+    "name": "Pedido 123",
+    "description": "Camiseta M",
+    "payerName": "Ana Souza",
+    "requestKey": "6d2a1728-fb1c-4fc1-bf7c-b4fc89fd6e73"
+  }'
+```
+
+`name` tem 2–80 caracteres, `description` 1–200 e `payerName` 2–100. O nome exibido no checkout inclui uma referência da Master. Use `X-Master-Operation` para escolher o negócio e mantenha esse header nas consultas.
+
+A resposta usa o mesmo formato das operações Pix, com `paymentMethod: "card"`, `checkoutUrl`, `expiresAt`, `feeCents` e `expectedNetAmountCents`. O link expira em **30 minutos**. Compartilhe `checkoutUrl` com o cliente; a cobrança de cartão não retorna QR Code Pix.
+
+## Aprovação e liquidação
+
+Consulte `GET /payments/{id}` ou processe o evento `payment.paid`. A Master acompanha o provedor por webhook, com consulta automática após 5 segundos sem atualização.
+
+| Campo | Significado |
+| --- | --- |
+| `status` | `pending`, `paid`, `failed`, `expired` ou `unknown`. |
+| `card.status` | `processing`, `refused` ou `paid`. |
+| `card.brand` / `card.last4` | Bandeira e últimos quatro dígitos; podem não estar disponíveis. |
+| `card.installments` | `1`, pagamento à vista. |
+| `card.refusedReason` / `card.attemptsLeft` | Motivo da recusa e tentativas restantes, quando informados. |
+| `releaseAt` | Data de liberação informada pela liquidante, quando disponível. |
+| `cardSettlementStatus` | `held` durante retenção; `available` após repasse confirmado ao negócio. |
+
+Um cartão recusado pode manter a cobrança `pending` para o cliente tentar novamente no mesmo checkout. Recusa não significa pagamento aprovado.
+
+O cartão aprovado tem **retenção de 7 dias na liquidante**. `paid` confirma a cobrança, mas **não significa saldo disponível para sacar**. A Master só disponibiliza o líquido após a liberação confirmada e o repasse idempotente à subconta do negócio correto. Se a data ou o repasse não puderem ser confirmados, o saldo permanece em retenção e a conciliação continua.
+
+## Taxa
+
+A tarifa padrão é **R$ 4,24 por cobrança aprovada**, podendo ser negociada por conta. Uma cobrança de R$ 49,90 retorna taxa `424` e líquido previsto `4566` (R$ 45,66). A tarifa é registrada na criação, cobrada quando aprovada e descontada uma única vez. Não aplique também a tarifa Pix de R$ 0,25 ao recebimento no cartão.
+
+## Repetição segura
+
+Sempre use o mesmo `requestKey` UUID para repetir os mesmos dados. A Master retorna a mesma operação. A criação de checkout da Z.PAY não documenta idempotência: por isso, **a Master não repete automaticamente um POST de checkout com resultado incerto**. Nesse caso, a operação fica `unknown` e pode não ter link disponível. Consulte o mesmo ID e procure o suporte se a conciliação não recuperar o resultado. Criar outra referência pode duplicar a cobrança.
+
+Os eventos duplicados de cartão são conciliados uma única vez. A Master valida assinatura, identificador e valor com o provedor antes de registrar aprovação; nenhum endpoint permite marcar uma cobrança como paga manualmente.

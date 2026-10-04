@@ -30,6 +30,7 @@
             "pages": [
               "operations",
               "pix-payments",
+              "card-payments",
               "transfers"
             ]
           },

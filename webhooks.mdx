@@ -9,7 +9,7 @@ No painel, abra **Integrações → Webhooks** e cadastre uma URL **HTTPS públi
 
 | Tipo | Quando ocorre |
 | --- | --- |
-| `payment.pending` | Cobrança Pix aguardando pagamento. |
+| `payment.pending` | Cobrança Pix ou cartão aguardando pagamento. |
 | `payment.paid` | Cobrança confirmada. |
 | `payment.expired` / `payment.failed` | Cobrança encerrada sem pagamento. |
 | `transfer.pending` | Transferência autorizada e em processamento. |
@@ -19,6 +19,8 @@ No painel, abra **Integrações → Webhooks** e cadastre uma URL **HTTPS públi
 Cada POST usa JSON com `id` (ID do evento), `type`, `createdAt` e `data` (`id` do pagamento, `operationId` do negócio, `kind`, `status`, `amountCents`, `createdAt`, `updatedAt`). Os endpoints recebem eventos de todos os negócios da conta; use `data.operationId` para identificá-los. O mesmo evento mantém o mesmo corpo e ID nas tentativas de entrega.
 
 Novos saques podem incluir `data.debitAmountCents` (total descontado), `data.feeCents` (tarifa da conta), `data.expectedNetAmountCents` (líquido previsto) e `data.netAmountCents` (líquido informado pela liquidante). Para saques, `amountCents` é o valor bruto com a taxa incluída. Em `transfer.completed`, consulte o líquido confirmado; não desconte a taxa novamente.
+
+Cartão usa os mesmos eventos `payment.*`, com `data.paymentMethod: "card"`, `feeCents`, `expectedNetAmountCents` e `releaseAt` quando disponível. `payment.paid` informa aprovação; o saldo permanece em retenção até a liberação e o repasse ao negócio. Consulte `GET /payments/{id}` para `cardSettlementStatus`. Recusa com nova tentativa no checkout pode manter o estado pendente e não gerar um evento novo.
 
 ## Assinatura
 

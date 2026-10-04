@@ -5,14 +5,15 @@ description: "Crie cobranças Pix, acompanhe pagamentos e receba eventos em temp
 
 # Pagamentos com uma API direta
 
-A Master oferece uma API JSON para criar cobranças Pix, consultar operações, conferir o saldo e preparar transferências com confirmação por e-mail. As respostas de pagamentos representam operações da **sua conta**; uma API key de outra conta nunca acessa esses registros.
+A Master oferece uma API JSON para criar cobranças Pix e cartão, consultar operações, conferir o saldo e enviar transferências automaticamente com API key. As respostas de pagamentos representam operações da **sua conta**; uma API key de outra conta nunca acessa esses registros.
 
 | Recurso | O que faz |
 | --- | --- |
 | Cobranças Pix | Gera QR Code e código copia e cola para uma cobrança. |
 | Consulta de operações | Retorna status e detalhes das últimas operações ou de uma operação específica. |
 | Conta | Informa saldo disponível e limites de cobrança. |
-| Transferências | Prepara um Pix e exige código enviado ao e-mail verificado antes de enviar. |
+| Cartão de crédito | Cria um checkout hospedado e acompanha aprovação e liberação do saldo. |
+| Transferências | Envia Pix automaticamente com API key, sem confirmação por e-mail. |
 | Webhooks | Entrega eventos assinados para seu endpoint HTTPS. |
 | Operações de negócio | Cria e renomeia até 10 negócios com saldos e históricos separados. |
 

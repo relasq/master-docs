@@ -47,7 +47,7 @@ O negócio deixa de aparecer no painel e na listagem, mas seus registros finance
 
 ## Selecionar a operação para pagamentos
 
-Envie o ID do negócio no header em todas as chamadas de saldo, cobranças, consultas, preparação, confirmação e cancelamento de saque:
+Envie o ID do negócio no header em todas as chamadas de saldo, cobranças, consultas e envio de saque automático (ou confirmação e cancelamento de rascunhos legados):
 
 ```http
 Authorization: Bearer mk_live_...
@@ -56,6 +56,6 @@ X-Master-Operation: c5a0aad5-a09f-455b-a081-bdbb3e5398a7
 
 Sem esse header, a API usa a operação principal. Um UUID inválido retorna `400`; uma operação fora da conta retorna `404`. Não reutilize um `requestKey` de pagamento em outro negócio: a referência é única por conta.
 
-Cada pagamento informa `operationId`; cada evento de webhook inclui esse ID em `data.operationId`. Use esse campo para identificar o negócio na sua integração. Para consultar o pagamento ou confirmar um saque, mantenha o mesmo header usado na criação.
+Cada pagamento informa `operationId`; cada evento de webhook inclui esse ID em `data.operationId`. Use esse campo para identificar o negócio na sua integração. Para consultar o pagamento ou acompanhar um saque, mantenha o mesmo header usado na criação.
 
 Criar um negócio não movimenta dinheiro. A subconta da liquidante é vinculada na primeira operação financeira. Saques só utilizam o saldo do negócio selecionado; um negócio não cobre saldo insuficiente de outro. Restrições de saque da conta e bloqueios globais continuam valendo em todos os negócios.
