@@ -39,7 +39,7 @@ curl -X DELETE https://api.pagmaster.site/api/v1/public/operations/ID_DO_NEGOCIO
   -d '{}'
 ```
 
-A conta mantém **pelo menos uma operação**. A exclusão é bloqueada enquanto houver saldo, retenção administrativa ou pagamentos/saques não concluídos. O saldo da subconta é confirmado com a liquidante; se a consulta falhar, a exclusão retorna `503`. Esses bloqueios e o limite mínimo também valem para chamadas simultâneas.
+A conta mantém **pelo menos uma operação**. A exclusão é bloqueada enquanto houver saldo, retenção administrativa ou pagamentos/saques não concluídos. O saldo local deve corresponder à soma dos lançamentos imutáveis do ledger; uma divergência bloqueia a exclusão com `503`. Esses bloqueios e o limite mínimo também valem para chamadas simultâneas.
 
 Se a principal for excluída, o negócio restante mais antigo se torna a principal. Chamadas sem `X-Master-Operation` passam a usar essa nova principal. A exclusão libera uma vaga no limite de 10. Repetir a exclusão do mesmo ID retorna sucesso, sem remover outra operação.
 
@@ -58,4 +58,4 @@ Sem esse header, a API usa a operação principal. Um UUID inválido retorna `40
 
 Cada pagamento informa `operationId`; cada evento de webhook inclui esse ID em `data.operationId`. Use esse campo para identificar o negócio na sua integração. Para consultar o pagamento ou acompanhar um saque, mantenha o mesmo header usado na criação.
 
-Criar um negócio não movimenta dinheiro. A subconta da liquidante é vinculada na primeira operação financeira. Saques só utilizam o saldo do negócio selecionado; um negócio não cobre saldo insuficiente de outro. Restrições de saque da conta e bloqueios globais continuam valendo em todos os negócios.
+Criar um negócio não movimenta dinheiro. A Master separa os saldos por negócio em seu ledger. Novas cobranças e saques usam a conta principal da liquidante, sem provisionar subcontas. Saques só utilizam o saldo do negócio selecionado; um negócio não cobre saldo insuficiente de outro. Restrições de saque da conta e bloqueios globais continuam valendo em todos os negócios.

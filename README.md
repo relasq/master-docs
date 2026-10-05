@@ -1,6 +1,6 @@
 # Master Developers
 
-Documentação Mintlify da API pública da Master. Domínio de publicação: **https://docs2.loopbot.app**.
+Documentação Mintlify da API pública da Master. Domínio de publicação: **https://docs.pagmaster.site**.
 
 ```sh
 npm ci
@@ -9,7 +9,7 @@ npm run dev
 
 Preview local: `http://localhost:3001`. `docs.json` organiza os guias e importa `openapi.yaml` como referência. A base de produção é `https://api.pagmaster.site/api/v1/public`.
 
-Conecte este repositório ao projeto Mintlify e configure `docs2.loopbot.app` como domínio personalizado no serviço, com o DNS indicado por ele. Enviar o código ao GitHub não configura o domínio ou a hospedagem.
+Conecte este repositório ao projeto Mintlify e configure `docs.pagmaster.site` como domínio personalizado no serviço, com o DNS indicado por ele. Enviar o código ao GitHub não configura o domínio ou a hospedagem.
 
 ## Contrato
 

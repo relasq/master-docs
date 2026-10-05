@@ -20,7 +20,7 @@ Cada POST usa JSON com `id` (ID do evento), `type`, `createdAt` e `data` (`id` d
 
 Novos saques podem incluir `data.debitAmountCents` (total descontado), `data.feeCents` (tarifa da conta), `data.expectedNetAmountCents` (líquido previsto) e `data.netAmountCents` (líquido informado pela liquidante). Para saques, `amountCents` é o valor bruto com a taxa incluída. Em `transfer.completed`, consulte o líquido confirmado; não desconte a taxa novamente.
 
-Cartão usa os mesmos eventos `payment.*`, com `data.paymentMethod: "card"`, `feeCents`, `expectedNetAmountCents` e `releaseAt` quando disponível. `payment.paid` informa aprovação; o saldo permanece em retenção até a liberação e o repasse ao negócio. Consulte `GET /payments/{id}` para `cardSettlementStatus`. Recusa com nova tentativa no checkout pode manter o estado pendente e não gerar um evento novo.
+Cartão usa os mesmos eventos `payment.*`, com `data.paymentMethod: "card"`, `feeCents`, `expectedNetAmountCents` e `releaseAt` quando disponível. `payment.paid` informa aprovação; o saldo permanece em retenção até a liberação confirmada e o crédito no ledger do negócio. Consulte `GET /payments/{id}` para `cardSettlementStatus`. Recusa com nova tentativa no checkout pode manter o estado pendente e não gerar um evento novo.
 
 ## Assinatura
 

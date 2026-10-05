@@ -437,7 +437,7 @@ paths:
       operationId: createCardCharge
       summary: Criar cobrança no cartão
       description: 'Exige charges. R$5 a R$2.000, à vista; taxa padrão 424 centavos por aprovação. Retorna link hospedado com prazo de 30 minutos. Use o
-        mesmo requestKey em repetições: checkout incerto não é recriado. Saldo fica retido até liberação da liquidante e repasse confirmado ao negócio.'
+        mesmo requestKey em repetições: checkout incerto não é recriado. Saldo fica retido até liberação confirmada da liquidante e crédito único no ledger do negócio.'
       requestBody:
         required: true
         content:
