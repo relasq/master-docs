@@ -631,6 +631,15 @@ components:
         withdrawalsFrozen:
           type: boolean
           description: Bloqueio de saques da conta ou plataforma
+        apiTransfersFrozen:
+          type: boolean
+          description: Bloqueio global de novos saques automáticos por API; withdrawalsFrozen também prevalece
+        pixChargesPaused:
+          type: boolean
+          description: Criação de novas cobranças Pix pausada pela administração
+        cardChargesPaused:
+          type: boolean
+          description: Criação de novos checkouts de cartão pausada pela administração
         cardFeeCents:
           type: integer
           minimum: 0

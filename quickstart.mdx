@@ -20,6 +20,8 @@ curl https://api.pagmaster.site/api/v1/public/account \
 
 A resposta inclui `operationId`, `enabled`, `balanceCents`, `feeCents`, `cardFeeCents`, `minimumCardCents`, `maximumCardCents`, `minimumDepositCents`, `maximumDepositCents`, `minimumWithdrawalCents` (1000), `maximumWithdrawalCents` (1000000) e `reservedWithdrawalCents`. O saldo disponível exclui saques reservados, retenções administrativas e a margem da Master. Um saldo pode estar momentaneamente desatualizado até a reconciliação do provedor. Sem `X-Master-Operation`, todas as chamadas usam a principal; para outro negócio, envie esse header com seu ID nas consultas e escritas. Consulte [operações de negócio](/operations).
 
+Consulte também `withdrawalsFrozen`, `apiTransfersFrozen`, `pixChargesPaused` e `cardChargesPaused` para disponibilidade. A administração pode atualizar as taxas para novas movimentações; cobranças e saques já criados mantêm suas taxas registradas. Consulte [erros e limites](/errors-and-limits).
+
 ## 3. Crie uma cobrança Pix
 
 Crie um UUID e preserve o mesmo `requestKey` em qualquer repetição da mesma cobrança.

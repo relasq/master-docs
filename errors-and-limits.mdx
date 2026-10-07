@@ -9,7 +9,7 @@ As respostas de erro usam JSON com `message` e `statusCode`. Erros de validaçã
 | --- | --- |
 | `400` | Corpo inválido, valor fora do limite, referência reutilizada com outros dados ou chave Pix inválida. |
 | `401` | API key ausente, inválida ou revogada; código de transferência inválido ou expirado. |
-| `403` | A key não tem permissão para a rota. |
+| `403` | A key não tem permissão para a rota, os saques estão bloqueados ou a criação de novas cobranças está pausada pela administração. |
 | `404` | Operação não encontrada na sua conta. |
 | `429` | Limite temporário de requisições. |
 | `503` | Serviço de pagamentos momentaneamente indisponível. |
@@ -17,3 +17,13 @@ As respostas de erro usam JSON com `message` e `statusCode`. Erros de validaçã
 Limites atuais: **120 chamadas/minuto por key**, **10 criações de cobrança/minuto por conta**, **10 criações de checkout de cartão/15 minutos por conta**, **30 envios automáticos/hora por conta**, **3 preparações pelo site/hora por conta**, **20 tentativas de confirmação de rascunhos legados a cada 10 minutos**, **30 criações de negócio/hora**, **30 exclusões de negócio/hora** e **60 renomeações de negócio/hora**. Uma conta mantém entre **1 e 10 negócios incluindo a principal**. O código do site e de rascunhos legados permite até cinco erros e expira em 10 minutos. Novos envios por API key não usam esse código.
 
 Ao receber uma resposta incerta ou timeout após criar uma cobrança, repita **a mesma requisição com o mesmo `requestKey`**. Para cartão, a mesma referência retorna a operação sem repetir um checkout incerto; para transferências, consulte o ID antes de qualquer nova ação. Nunca troque o UUID para contornar um resultado incerto.
+
+## Controles de disponibilidade
+
+A administração pode pausar saques de toda a plataforma, apenas saques automáticos por API, criação de cobranças Pix ou criação de checkouts de cartão. O bloqueio global de saques prevalece sobre a liberação individual; liberar o controle global não remove bloqueios de contas. Consultas de status e webhooks continuam funcionando durante a pausa para conciliar solicitações já enviadas. Uma pausa não cancela uma transferência já enviada nem invalida um QR Code ou checkout já emitido.
+
+`GET /account` informa `withdrawalsFrozen`, `apiTransfersFrozen`, `pixChargesPaused` e `cardChargesPaused`. Trate a resposta `403` da criação como indisponibilidade e aguarde a liberação. Não tente contornar o bloqueio mudando de operação ou criando outra key.
+
+## Taxas da conta
+
+As taxas podem ser atualizadas globalmente ou por usuário. `feeCents` é a taxa fixa de Pix e saque; `cardFeeCents` é a taxa fixa de cartão aprovado. Consulte os valores atuais em `GET /account`. Cada cobrança ou saque mantém o valor gravado na criação, mesmo após uma atualização das taxas. Os valores apresentados nos exemplos são ilustrativos. Um ajuste administrativo de saldo é um lançamento contábil separado e não representa um pagamento aprovado ou envio pela liquidante.
