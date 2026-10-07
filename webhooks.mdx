@@ -43,3 +43,7 @@ function verify(rawBody: Buffer, header: string, secret: string) {
 Responda com HTTP **2xx em até 8 segundos**. Falhas e timeouts são reenviados com espera crescente, por até oito tentativas. Use o `id` do evento ou `X-Master-Delivery` para deduplicar. Antes de liberar bens ou serviços, confirme que `data.status` é `paid` para uma cobrança e que a operação pertence à sua conta.
 
 Você pode girar o segredo no painel. O segredo antigo deixa de assinar tentativas futuras; atualize sua aplicação ao girar.
+
+## Conciliação na Master
+
+A Master recebe as notificações assinadas da liquidante em uma fila durável. Se o evento chegar antes de sua referência ficar disponível, ele é reprocessado internamente. A conciliação confirma o status na API da liquidante antes de atualizar o saldo e emitir o evento para sua integração. Eventos sem operação correspondente não são importados como movimentações de clientes. A consulta automática de operações pendentes permanece disponível como alternativa às notificações.
