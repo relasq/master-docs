@@ -197,21 +197,16 @@ paths:
       operationId: confirmPixTransfer
       summary: Confirmar transferência Pix
       description: Compatibilidade com rascunhos legados em draft. Novos envios por POST /pix/transfers são automáticos e não usam esta rota. Exige permissão
-        `transfers`. O código de seis dígitos expira em 10 minutos e admite até cinco tentativas incorretas.
+        `transfers`, saldo suficiente e ausência de bloqueios. Envie corpo {}. Não exige código nem envia e-mail.
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
-              required:
-              - code
               additionalProperties: false
-              properties:
-                code:
-                  type: string
-                  pattern: ^\d{6}$
-                  example: '123456'
+              properties: {}
+              example: {}
       responses:
         '201':
           description: Transferência submetida ou estado atual retornado

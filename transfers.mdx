@@ -44,6 +44,8 @@ Um timeout ou `unknown` pode indicar que o Pix já foi enviado. Preserve o mesmo
 
 ## Compatibilidade com rascunhos antigos
 
-`POST /pix/transfers/{id}/confirm` e `/cancel` permanecem somente para rascunhos legados em `draft`. **Não fazem parte do novo fluxo automático.** Uma referência usada em um rascunho com código não pode ser reutilizada para um envio automático.
+`POST /pix/transfers/{id}/confirm` e `/cancel` permanecem somente para rascunhos legados em `draft`. **Não fazem parte do novo fluxo automático.** A autorização de um rascunho antigo recebe corpo `{}`, sem código de e-mail, e exige uma key com permissão `transfers`, saldo suficiente e ausência de bloqueios. Rascunhos anteriores ao cálculo atual de taxas precisam ser cancelados e recriados. Uma referência usada em um rascunho não pode ser reutilizada para um novo envio automático.
 
-A página Transferir do painel continua com confirmação por e-mail. Essa proteção do acesso pelo site é independente da autorização por API key.
+## Envio pelo painel
+
+Na página **Transferir**, informe o valor e a chave Pix, confira a taxa e o líquido previsto e clique em **Transferir agora**. A sessão autenticada autoriza o envio diretamente, sem código de e-mail. A API key também autoriza o envio diretamente na criação. Ambos os canais reservam o saldo antes do envio, preservam a mesma referência nas repetições e respeitam os bloqueios administrativos. A mesma referência não deve ser usada em canais diferentes.
