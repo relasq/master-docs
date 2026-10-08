@@ -1,0 +1,54 @@
+---
+title: "Master IA"
+description: "Conversas, consultas da conta e revisão de ações no painel."
+---
+
+Na sidebar do painel, o seletor com ícones alterna entre o **painel convencional** e **Master IA**. No modo de conversas, a navegação mostra uma nova conversa e o histórico da operação selecionada. Conversas podem ser renomeadas ou excluídas; excluir um chat não exclui pagamentos nem altera o saldo.
+
+## Estado atual
+
+O provedor e o modelo de IA **ainda não foram configurados**. Mensagens livres ficam salvas, mas não recebem análises geradas por um modelo. A interface informa essa condição. Não há envio de dados da conta a um provedor de IA nesta etapa.
+
+Os atalhos já consultam os serviços da Master: saldo e condições, insights de recebimentos, movimentações, operações e metadados de integrações. As consultas usam os dados reais disponíveis na conta; não há dados demonstrativos nas respostas dos chats.
+
+## Comandos
+
+| Comando | Ação |
+| --- | --- |
+| `/saldo` | Consulta saldo e condições da operação selecionada. |
+| `/insights` | Consulta volume, movimentações e série de recebimentos. |
+| `/pagamentos` | Lista movimentações da operação. |
+| `/operacoes` | Lista os negócios da conta. |
+| `/integracoes` | Consulta chaves e endpoints, sem revelar os segredos. |
+| `/receber` | Prepara uma cobrança Pix para revisão. |
+| `/cartao` | Prepara um checkout de cartão para revisão. |
+| `/transferir` | Prepara uma transferência Pix para revisão. |
+| `/criar-operacao` | Prepara a criação de um negócio na conta. |
+| `/renomear-operacao` | Prepara a alteração do nome da operação selecionada. |
+
+## Revisão e execução
+
+Preparar uma ação não cria uma cobrança nem envia dinheiro. Confira os dados no cartão de aprovação e confirme a solicitação. Para pagamentos, a revisão informa a taxa consultada e o líquido previsto. Propostas não autorizadas expiram em dez minutos. Uma mudança de taxa antes da autorização exige uma nova proposta.
+
+A execução usa os mesmos serviços de pagamentos do painel: aplica taxas, saldo disponível, limite de operações, saque mínimo e bloqueios da conta. Transferências não exigem código de e-mail; a revisão é feita na interface. A criação usa uma referência estável para impedir duplicação em novas tentativas. Uma solicitação registrada pode continuar pendente de confirmação da liquidante; consulte o status na página de pagamentos.
+
+## Acesso
+
+As rotas de conversas são internas ao painel e exigem sessão autenticada e validação de origem nas alterações. Uma conversa só pode ser acessada pelo proprietário, na operação à qual pertence. O assistente não possui permissões administrativas sobre outras contas e não recebe segredos de API ou assinatura de webhooks.
+
+Os chats têm limite de 100 conversas por conta, 200 mensagens e 100 propostas por conversa. Após a autorização, uma tentativa interrompida pode ser retomada com a mesma referência, sem criar uma segunda movimentação. A ativação do provedor de IA será uma etapa separada.
+
+## Configuração do provedor
+
+O conector aceita provedores compatíveis com o contrato de Chat Completions e chamadas de ferramentas da OpenAI. Configure as variáveis **somente na API**, nunca no site ou em variáveis `NEXT_PUBLIC_*`:
+
+```dotenv
+ASSISTANT_ENABLED=false
+ASSISTANT_BASE_URL=https://api.openai.com/v1
+ASSISTANT_MODEL=nome-do-modelo-com-suporte-a-tools
+ASSISTANT_API_KEY=chave-privada-do-provedor
+```
+
+Depois de definir um modelo que aceite chamadas de funções e `max_completion_tokens`, uma chave válida e a base HTTPS do provedor, altere `ASSISTANT_ENABLED` para `true` e faça um novo deploy da API. Com a integração habilitada, mensagens recentes e resultados das ferramentas podem ser enviados ao provedor para responder ao usuário. Não são enviados tokens de sessão, credenciais da liquidante nem segredos de integração.
+
+O conector não expõe uma ferramenta para executar transferências: o modelo só prepara propostas validadas, que permanecem pendentes até a confirmação no painel. Respostas de ferramentas são limitadas para manter o contexto sob controle; o sistema usa até três rodadas por mensagem e limita o tempo das chamadas ao provedor.
