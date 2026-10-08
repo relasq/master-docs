@@ -40,6 +40,10 @@ function verify(rawBody: Buffer, header: string, secret: string) {
 
 ## Entrega e repetição
 
+No painel, em **Integrações → Webhooks**, clique em **Entregas** ao lado do endpoint. O histórico mostra o evento, a data, o código HTTP, a situação (entregue, na fila, enviando ou falhou) e o número de tentativas. Abra uma entrega para consultar o JSON enviado e as respostas de cada tentativa. A lista atualiza automaticamente enquanto estiver aberta e tem paginação.
+
+Novas tentativas registram o código HTTP, a duração, o corpo da resposta (limitado aos primeiros **8 KB**) e falhas de conexão ou timeout. Entregas anteriores à introdução do histórico detalhado mantêm os dados já existentes; corpos de resposta antigos não podem ser recuperados. O histórico é acessível apenas à conta proprietária do endpoint e não exibe seu segredo de assinatura.
+
 Responda com HTTP **2xx em até 8 segundos**. Falhas e timeouts são reenviados com espera crescente, por até oito tentativas. Use o `id` do evento ou `X-Master-Delivery` para deduplicar. Antes de liberar bens ou serviços, confirme que `data.status` é `paid` para uma cobrança e que a operação pertence à sua conta.
 
 Você pode girar o segredo no painel. O segredo antigo deixa de assinar tentativas futuras; atualize sua aplicação ao girar.
