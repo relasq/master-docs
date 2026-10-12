@@ -5,7 +5,7 @@ description: "Crie um checkout hospedado, consulte a aprovação e acompanhe a l
 
 ## Criar cobrança
 
-`POST /card/charges` exige permissão `charges`. Aceita de **R$ 5,00 a R$ 2.000,00**, em centavos inteiros, e pagamento **à vista**. O cliente informa os dados do cartão exclusivamente no checkout hospedado da Z.PAY. A Master não recebe número completo, CVV ou dados 3D Secure.
+`POST /card/charges` exige permissão `charges`. Aceita de **R$ 5,00 a R$ 2.000,00**, em centavos inteiros, e pagamento **à vista**. O cliente informa os dados do cartão exclusivamente no checkout seguro de pagamento. A Master não recebe número completo, CVV ou dados 3D Secure.
 
 ```bash
 curl -X POST https://api.pagmaster.site/api/v1/public/card/charges \
@@ -48,6 +48,6 @@ A tarifa padrão é **R$ 4,24 por cobrança aprovada**, podendo ser negociada po
 
 ## Repetição segura
 
-Sempre use o mesmo `requestKey` UUID para repetir os mesmos dados. A Master retorna a mesma operação. A criação de checkout da Z.PAY não documenta idempotência: por isso, **a Master não repete automaticamente um POST de checkout com resultado incerto**. Nesse caso, a operação fica `unknown` e pode não ter link disponível. Consulte o mesmo ID e procure o suporte se a conciliação não recuperar o resultado. Criar outra referência pode duplicar a cobrança.
+Sempre use o mesmo `requestKey` UUID para repetir os mesmos dados. A Master retorna a mesma operação. A integração de checkout não garante idempotência na criação: por isso, **a Master não repete automaticamente um POST de checkout com resultado incerto**. Nesse caso, a operação fica `unknown` e pode não ter link disponível. Consulte o mesmo ID e procure o suporte se a conciliação não recuperar o resultado. Criar outra referência pode duplicar a cobrança.
 
 Os eventos duplicados de cartão são conciliados uma única vez. A Master valida assinatura, identificador e valor com o provedor antes de registrar aprovação; nenhum endpoint permite marcar uma cobrança como paga manualmente.
