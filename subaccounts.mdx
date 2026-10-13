@@ -7,6 +7,12 @@ Cada conta Pagmaster possui **uma única operação principal**. Pela API, você
 
 As subcontas são controladas pelo ledger da Pagmaster. Elas não exigem criar contas externas nem possuem login separado. A API key, as taxas, os bloqueios administrativos e os endpoints de webhook pertencem à conta proprietária.
 
+## Consultar no painel
+
+Abra **Integrações → Subcontas**, ou **Ver subcontas** no menu da operação principal no topo da sidebar. A página mostra as subcontas criadas pela API, seus saldos disponíveis e as datas de criação, com paginação. Abra uma linha para ver os detalhes e copiar seu identificador.
+
+O card **Saldo nesta página** soma apenas as subcontas listadas; o saldo principal é apresentado separadamente. O painel continua na única operação principal: consultar uma subconta não muda o contexto de recebimentos ou saques da dashboard. A criação e as movimentações das subcontas continuam pela API.
+
 ## Criar
 
 `POST https://api.pagmaster.site/api/v1/subaccounts` exige a permissão **`subaccounts`**. Gere uma key em **Integrações → Keys** com essa permissão e as permissões financeiras necessárias.

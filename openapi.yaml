@@ -642,6 +642,9 @@ components:
             - "null"
           format: uuid
           description: Subconta selecionada; null na principal
+        operationName:
+          type: string
+          description: Nome da operação principal ou da subconta selecionada
     CreateCharge:
       type: object
       additionalProperties: false
