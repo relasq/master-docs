@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Master API
-  version: 1.2.0
+  version: 1.3.0
   description: "API pública da Pagmaster: uma conta principal, subcontas com ledger próprio, cobranças Pix e cartão e saques
     automáticos. Valores em centavos inteiros."
 servers:
@@ -24,6 +24,8 @@ tags:
     description: Checkout hospedado e consulta de aprovação e liquidação
   - name: Subcontas
     description: Saldos e históricos independentes da conta principal
+  - name: Links de pagamento
+    description: Links de cobrança de uso único com Pix ou cartão
 paths:
   /account:
     get:
@@ -493,6 +495,57 @@ webhooks:
       responses:
         "200":
           description: Evento aceito pelo seu servidor
+  /payment-links:
+    parameters:
+      - $ref: '#/components/parameters/SubaccountHeader'
+    get:
+      tags: [Links de pagamento]
+      operationId: listPaymentLinks
+      summary: Listar links de pagamento
+      description: Exige read. Lista somente os links da conta e da subconta selecionada, com 20 itens por página.
+      parameters:
+        - name: page
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 10000, default: 1 }
+      responses:
+        '200':
+          description: Links e status de suas cobranças
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  links:
+                    type: array
+                    items: { $ref: '#/components/schemas/PaymentLink' }
+                  total: { type: integer }
+                  page: { type: integer }
+                  pageSize: { type: integer, const: 20 }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '429': { $ref: '#/components/responses/RateLimit' }
+    post:
+      tags: [Links de pagamento]
+      operationId: createPaymentLink
+      summary: Criar link de pagamento
+      description: Exige charges. Valor fixo, uso único e validade para iniciar a cobrança. Criar o link não emite o pagamento. O método fica fixado quando escolhido pelo cliente. requestKey idempotente; divergências retornam 409.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreatePaymentLink' }
+      responses:
+        '201':
+          description: Link criado ou repetição da referência original
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PaymentLink' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409':
+          description: Referência já usada com outros campos
+        '429': { $ref: '#/components/responses/RateLimit' }
 components:
   securitySchemes:
     bearerAuth:
@@ -1062,3 +1115,40 @@ components:
           type: integer
         pageSize:
           type: integer
+    CreatePaymentLink:
+      type: object
+      additionalProperties: false
+      required: [name, description, amountCents, methods, expiresInHours, requestKey]
+      properties:
+        name: { type: string, minLength: 2, maxLength: 80 }
+        description: { type: string, maxLength: 200 }
+        amountCents:
+          type: integer
+          minimum: 200
+          maximum: 200000
+          description: Mínimo 500 quando cartão estiver habilitado. Deve superar a taxa da conta.
+        methods:
+          type: array
+          minItems: 1
+          maxItems: 2
+          uniqueItems: true
+          items: { type: string, enum: [pix, card] }
+        expiresInHours: { type: integer, minimum: 1, maximum: 168 }
+        requestKey: { type: string, format: uuid }
+    PaymentLink:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        description: { type: string }
+        amountCents: { type: integer }
+        methods:
+          type: array
+          items: { type: string, enum: [pix, card] }
+        selectedMethod: { type: [string, 'null'], enum: [pix, card, null] }
+        status: { type: string, enum: [open, creating, unknown, pending, paid, completed, failed, expired, disabled, cancelled] }
+        url: { type: string, format: uri, description: Endereço compartilhável da página de pagamento. }
+        createdAt: { type: string, format: date-time }
+        expiresAt: { type: string, format: date-time, description: Prazo para iniciar; não cancela uma cobrança já emitida. }
+        paymentId: { type: [string, 'null'], format: uuid }
+        subaccountId: { type: [string, 'null'], format: uuid }

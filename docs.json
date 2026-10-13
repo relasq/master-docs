@@ -31,6 +31,7 @@
               "subaccounts",
               "pix-payments",
               "card-payments",
+              "payment-links",
               "transfers"
             ]
           },

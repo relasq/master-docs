@@ -1,0 +1,88 @@
+---
+title: Links de pagamento
+description: Uma página da Pagmaster para cobrar um valor fixo por Pix ou cartão.
+---
+
+## Criar no painel
+
+Abra **Pagamentos → Links de pagamento → Criar link**. Informe um nome, valor, descrição opcional, os métodos aceitos e a validade para iniciar o pagamento. Copie o endereço gerado e envie ao seu cliente.
+
+- Pix: de **R$ 2,00 a R$ 2.000,00**.
+- Cartão: de **R$ 5,00 a R$ 2.000,00**. O valor também deve superar a taxa da conta.
+- Validade para iniciar: entre **1 e 168 horas**; o painel oferece 1 hora, 24 horas e 7 dias.
+- Cada link aceita **um único pagamento**. Para uma nova venda, crie outro link.
+
+Criar o link ainda não emite uma cobrança. Ela é preparada quando o cliente informa seu nome e escolhe a forma de pagamento. Depois dessa escolha, o método permanece vinculado ao link, inclusive em novas abas e tentativas simultâneas.
+
+## Experiência do cliente
+
+O cliente abre `https://www.pagmaster.site/pay/IDENTIFICADOR_PUBLICO` sem precisar de conta na Pagmaster. O valor e a descrição vêm do servidor e não podem ser alterados pelo navegador.
+
+No **Pix**, a página mostra o QR Code e o código copia e cola. No **cartão**, ela abre o checkout seguro em outra aba: a Pagmaster não coleta número completo do cartão, CVV ou validade do cartão nessa página. O cliente pode acompanhar a confirmação na página do link.
+
+O status segue a confirmação financeira existente: webhooks assinados e consultas autenticadas de conciliação, com primeira consulta após cinco segundos quando necessária. O navegador consulta a atualização a cada cinco segundos enquanto visível. Abrir o link ou clicar em pagar não confirma o pagamento.
+
+<Warning>
+  O prazo do link permite **iniciar** a cobrança. Depois de emitida, o Pix ou checkout tem seu próprio prazo, exibido quando informado pelo processamento. Expirar ou desativar um link não invalida um pagamento já emitido. Uma confirmação posterior continua sendo conciliada.
+</Warning>
+
+## Criar pela API
+
+Exige uma API key com permissão **charges**. Use **read** para listar. O header `X-Master-Subaccount` é opcional e vincula o crédito à subconta escolhida; sem ele, o valor pertence à operação principal.
+
+```bash
+curl --request POST 'https://api.pagmaster.site/api/v1/public/payment-links' \
+  --header 'Authorization: Bearer SUA_API_KEY' \
+  --header 'Content-Type: application/json' \
+  --data '{
+    "name": "Pedido #1234",
+    "description": "Plano mensal",
+    "amountCents": 4990,
+    "methods": ["pix", "card"],
+    "expiresInHours": 24,
+    "requestKey": "c0d0ec49-229a-43bd-af88-fd2862af4ec4"
+  }'
+```
+
+```json
+{
+  "id": "649b174b-92a1-4b5e-a39a-ccf1a4059613",
+  "name": "Pedido #1234",
+  "description": "Plano mensal",
+  "amountCents": 4990,
+  "methods": ["card", "pix"],
+  "selectedMethod": null,
+  "status": "open",
+  "expiresAt": "2026-10-14T15:00:00.000Z",
+  "url": "https://www.pagmaster.site/pay/IDENTIFICADOR_PUBLICO",
+  "createdAt": "2026-10-13T15:00:00.000Z",
+  "paymentId": null,
+  "subaccountId": null
+}
+```
+
+O campo `url` é compartilhável e funciona como uma credencial para consultar **somente essa cobrança**. Não publique links de clientes em logs ou páginas indexadas. A página pública não expõe e-mail, saldo, taxas da conta ou outros pagamentos.
+
+Repetir `requestKey` com os mesmos campos devolve o mesmo link e preserva a validade original. Alterar os campos com a mesma referência retorna `409`. Um timeout não deve levar à geração de outra referência: repita a original para consultar a criação.
+
+## Listar e acompanhar
+
+`GET /api/v1/public/payment-links?page=1` retorna `links`, `total`, `page` e `pageSize` (20). O resultado pertence à conta e ao contexto de subconta selecionado. O `paymentId` aparece quando a cobrança é emitida e pode ser consultado em `GET /api/v1/public/payments/{id}` com o mesmo contexto.
+
+| Status | Significado |
+| --- | --- |
+| `open` | Disponível para iniciar um pagamento. |
+| `creating` | Método escolhido; cobrança ainda não registrada. |
+| `unknown` | Criação em verificação, sem confirmação suficiente para emitir outra. |
+| `pending` | Cobrança emitida, aguardando pagamento. |
+| `paid` | Pagamento confirmado; cartão segue o prazo de retenção normal. |
+| `failed`, `expired`, `cancelled` | Cobrança encerrada ou prazo do link encerrado antes da emissão. |
+| `disabled` | Vendedor desativou o link antes do início. |
+
+No painel, **Atualizar** busca os status atuais. Os pagamentos também aparecem no histórico financeiro normal e geram os eventos de webhook já documentados. Não existe um evento de crédito separado para o link: o mesmo pagamento é contabilizado uma única vez.
+
+## Desativar e lidar com falhas
+
+O painel permite desativar um link que ainda não foi iniciado. Depois de escolhida a forma de pagamento, a desativação é recusada com `409`, para não aparentar o cancelamento de uma cobrança emitida.
+
+Pausas globais de Pix ou cartão, limites e taxas da conta continuam sendo aplicados no momento da emissão. Uma criação incerta de cartão nunca gera automaticamente um segundo checkout. Um método já escolhido não é trocado para contornar uma falha; consulte o status antes de emitir outro link.
