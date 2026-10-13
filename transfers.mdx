@@ -7,7 +7,7 @@ description: "Envios automáticos com API key, reserva de saldo e consulta de st
 
 `POST /pix/transfers` envia um Pix usando uma API key com permissão `transfers`. **Não envia código de e-mail e não exige uma chamada de confirmação.** A key autoriza a movimentação. Guarde-a no servidor e conceda essa permissão somente às integrações que precisam sacar.
 
-Envie `X-Master-Operation` para selecionar o negócio. O saldo de outro negócio não cobre o saque. Bloqueios administrativos da conta e da plataforma também se aplicam aos envios por API.
+Envie `X-Master-Subaccount` para selecionar a subconta. O saldo de outra subconta não cobre o saque. Bloqueios administrativos da conta e da plataforma também se aplicam aos envios por API.
 
 ```bash
 curl -X POST https://api.pagmaster.site/api/v1/public/pix/transfers \

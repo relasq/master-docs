@@ -20,7 +20,7 @@ curl -X POST https://api.pagmaster.site/api/v1/public/card/charges \
   }'
 ```
 
-`name` tem 2–80 caracteres, `description` 1–200 e `payerName` 2–100. O nome exibido no checkout inclui uma referência da Master. Use `X-Master-Operation` para escolher o negócio e mantenha esse header nas consultas.
+`name` tem 2–80 caracteres, `description` 1–200 e `payerName` 2–100. O nome exibido no checkout inclui uma referência da Master. Use `X-Master-Subaccount` para escolher a subconta e mantenha esse header nas consultas.
 
 A resposta usa o mesmo formato das operações Pix, com `paymentMethod: "card"`, `checkoutUrl`, `expiresAt`, `feeCents` e `expectedNetAmountCents`. O link expira em **30 minutos**. Compartilhe `checkoutUrl` com o cliente; a cobrança de cartão não retorna QR Code Pix.
 
@@ -36,11 +36,11 @@ Consulte `GET /payments/{id}` ou processe o evento `payment.paid`. A Master acom
 | `card.installments` | `1`, pagamento à vista. |
 | `card.refusedReason` / `card.attemptsLeft` | Motivo da recusa e tentativas restantes, quando informados. |
 | `releaseAt` | Data de liberação informada pela liquidante, quando disponível. |
-| `cardSettlementStatus` | `held` durante retenção; `available` após liberação confirmada e crédito no ledger do negócio. |
+| `cardSettlementStatus` | `held` durante retenção; `available` após liberação confirmada e crédito no ledger da subconta selecionada. |
 
 Um cartão recusado pode manter a cobrança `pending` para o cliente tentar novamente no mesmo checkout. Recusa não significa pagamento aprovado.
 
-O cartão aprovado tem **retenção de 7 dias na liquidante**. `paid` confirma a cobrança, mas **não significa saldo disponível para sacar**. A Master só disponibiliza o líquido após a liberação confirmada pela consulta autenticada e o crédito único no ledger do negócio correto. Novas cobranças usam a conta principal da liquidante, sem repasse para subcontas. Se a data ou o crédito não puderem ser confirmados, o saldo permanece em retenção e a conciliação continua.
+O cartão aprovado tem **retenção de 7 dias na liquidante**. `paid` confirma a cobrança, mas **não significa saldo disponível para sacar**. A Master só disponibiliza o líquido após a liberação confirmada pela consulta autenticada e o crédito único no ledger da subconta selecionada correto. Novas cobranças usam a conta principal da liquidante, sem repasse para subcontas. Se a data ou o crédito não puderem ser confirmados, o saldo permanece em retenção e a conciliação continua.
 
 ## Taxa
 

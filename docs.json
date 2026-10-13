@@ -28,7 +28,7 @@
           {
             "group": "Pagamentos",
             "pages": [
-              "operations",
+              "subaccounts",
               "pix-payments",
               "card-payments",
               "transfers"

@@ -3,7 +3,7 @@ title: "Master IA"
 description: "Conversas, consultas da conta e revisão de ações no painel."
 ---
 
-Na sidebar do painel, o seletor com ícones alterna entre o **painel convencional** e **Master IA**. No modo de conversas, a navegação mostra uma nova conversa e o histórico da operação selecionada. Conversas podem ser renomeadas ou excluídas; excluir um chat não exclui pagamentos nem altera o saldo.
+A aba Master IA está desabilitada no painel. As rotas internas de conversas permanecem em preparação; a navegação convencional usa exclusivamente a conta principal.
 
 ## Estado atual
 
@@ -15,22 +15,20 @@ Os atalhos já consultam os serviços da Master: saldo e condições, insights d
 
 | Comando | Ação |
 | --- | --- |
-| `/saldo` | Consulta saldo e condições da operação selecionada. |
+| `/saldo` | Consulta saldo e condições da conta principal. |
 | `/insights` | Consulta volume, movimentações e série de recebimentos. |
 | `/pagamentos` | Lista movimentações da operação. |
-| `/operacoes` | Lista os negócios da conta. |
+| `/operacoes` | Consulta somente a operação principal, por compatibilidade. |
 | `/integracoes` | Consulta chaves e endpoints, sem revelar os segredos. |
 | `/receber` | Prepara uma cobrança Pix para revisão. |
 | `/cartao` | Prepara um checkout de cartão para revisão. |
 | `/transferir` | Prepara uma transferência Pix para revisão. |
-| `/criar-operacao` | Prepara a criação de um negócio na conta. |
-| `/renomear-operacao` | Prepara a alteração do nome da operação selecionada. |
 
 ## Revisão e execução
 
 Preparar uma ação não cria uma cobrança nem envia dinheiro. Confira os dados no cartão de aprovação e confirme a solicitação. Para pagamentos, a revisão informa a taxa consultada e o líquido previsto. Propostas não autorizadas expiram em dez minutos. Uma mudança de taxa antes da autorização exige uma nova proposta.
 
-A execução usa os mesmos serviços de pagamentos do painel: aplica taxas, saldo disponível, limite de operações, saque mínimo e bloqueios da conta. Transferências não exigem código de e-mail; a revisão é feita na interface. A criação usa uma referência estável para impedir duplicação em novas tentativas. Uma solicitação registrada pode continuar pendente de confirmação da liquidante; consulte o status na página de pagamentos.
+A execução usa os mesmos serviços de pagamentos do painel: aplica taxas, saldo disponível,  saque mínimo e bloqueios da conta. Transferências não exigem código de e-mail; a revisão é feita na interface. A criação usa uma referência estável para impedir duplicação em novas tentativas. Uma solicitação registrada pode continuar pendente de confirmação da liquidante; consulte o status na página de pagamentos.
 
 ## Acesso
 

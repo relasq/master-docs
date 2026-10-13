@@ -1,0 +1,93 @@
+---
+title: "Subcontas"
+description: "Crie subcontas pela API, com saldo e histórico separados da conta principal."
+---
+
+Cada conta Pagmaster possui **uma única operação principal**. Pela API, você pode criar subcontas: cada uma começa com saldo zero e possui recebimentos, reservas de saque e histórico próprios. Criar uma subconta não transfere dinheiro da principal.
+
+As subcontas são controladas pelo ledger da Pagmaster. Elas não exigem criar contas externas nem possuem login separado. A API key, as taxas, os bloqueios administrativos e os endpoints de webhook pertencem à conta proprietária.
+
+## Criar
+
+`POST https://api.pagmaster.site/api/v1/subaccounts` exige a permissão **`subaccounts`**. Gere uma key em **Integrações → Keys** com essa permissão e as permissões financeiras necessárias.
+
+```bash
+curl -X POST https://api.pagmaster.site/api/v1/subaccounts \
+  -H "Authorization: Bearer $MASTER_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Cliente A","requestKey":"c5a0aad5-a09f-455b-a081-bdbb3e5398a7"}'
+```
+
+```json
+{
+  "id": "2b49a377-e233-4a26-93b5-b9587c71d6fd",
+  "name": "Cliente A",
+  "ownerId": "6f5f796e-811f-46dd-9a9b-fb9bdf3f53a3",
+  "currency": "BRL",
+  "status": "active",
+  "balanceCents": 0,
+  "balanceUpdatedAt": 1791856800000,
+  "createdAt": 1791856800000
+}
+```
+
+O nome deve ter 2–64 caracteres, sem contar espaços nas extremidades. `requestKey` é um UUID: preserve a mesma referência para repetir uma criação sem duplicar a subconta, inclusive após renomeá-la. Usar a mesma referência para outro nome ou para uma subconta excluída retorna `400`. Os valores acima são ilustrativos.
+
+As rotas de gestão também aceitam `/api/v1/public/subaccounts`, para integrações que já usam a base pública.
+
+## Selecionar em qualquer rota financeira
+
+Use a mesma API key e envie o ID retornado em **`X-Master-Subaccount`**:
+
+```http
+Authorization: Bearer mk_live_...
+X-Master-Subaccount: 2b49a377-e233-4a26-93b5-b9587c71d6fd
+```
+
+Esse contexto funciona em **todos os endpoints financeiros da documentação**:
+
+| Endpoint | Comportamento |
+| --- | --- |
+| `GET /account` | Saldo, reservas, taxas e disponibilidade da subconta. |
+| `GET /payments` | Somente pagamentos e saques da subconta. |
+| `GET /payments/{id}` | Consulta de um pagamento pertencente à mesma subconta. |
+| `POST /pix/charges` | QR Code e copia e cola com crédito destinado à subconta. |
+| `POST /card/charges` | Checkout com crédito na subconta após a liberação confirmada. |
+| `POST /pix/transfers` | Saque automático usando exclusivamente seu saldo disponível. |
+| `POST /pix/transfers/{id}/confirm` ou `/cancel` | Somente rascunhos legados da subconta selecionada. |
+
+Os caminhos financeiros continuam relativos a `https://api.pagmaster.site/api/v1/public`. Não é preciso mudar o corpo das requisições.
+
+```bash
+curl https://api.pagmaster.site/api/v1/public/account \
+  -H "Authorization: Bearer $MASTER_API_KEY" \
+  -H "X-Master-Subaccount: $SUBACCOUNT_ID"
+```
+
+**Sem o header, as rotas usam a principal.** Mantenha o mesmo contexto da criação nas consultas e no acompanhamento de um saque. Um UUID inválido ou contextos simultâneos (`X-Master-Operation`/`operationId` e `X-Master-Subaccount`) retornam `400`. IDs de outra conta, excluídos ou referentes à principal no header de subconta retornam `404`.
+
+As permissões da key continuam obrigatórias: selecionar uma subconta não concede permissão para criar cobranças ou enviar dinheiro. A gestão de subcontas opera sobre a conta proprietária; o header não cria hierarquias de subcontas. Keys, perfil e endpoints de webhook permanecem compartilhados e são administrados pelo painel.
+
+## Saldo e segurança financeira
+
+Recebimentos confirmados são registrados uma única vez no ledger da subconta correspondente. Cartão mantém sua retenção até a liberação. Reservas de saque bloqueiam apenas o saldo da origem, e uma subconta não pode utilizar valores da principal nem de outra subconta. O mínimo de saque continua sendo **R$ 10,00**, com a taxa da conta incluída no débito bruto.
+
+Taxas e bloqueios globais ou individuais são herdados da conta principal. Não existe parâmetro de criação para definir saldo ou contornar essas condições. Referências de pagamento `requestKey` continuam únicas por conta proprietária: use UUIDs distintos entre cobranças diferentes, inclusive em subcontas diferentes.
+
+## Listar e consultar
+
+`GET /subaccounts?page=1&pageSize=25` exige **`read`**. Retorna `{ subaccounts, total, page, pageSize }`. `pageSize` aceita 1–100, e `page` aceita 1–10000. `GET /subaccounts/{id}` retorna uma subconta da mesma conta com seu saldo disponível em centavos.
+
+## Renomear e excluir
+
+`PATCH /subaccounts/{id}` recebe `{ "name": "Novo nome" }` e exige **`subaccounts`**. O ID e o histórico permanecem os mesmos.
+
+`DELETE /subaccounts/{id}`, com `Content-Type: application/json` e corpo `{}`, exige **`subaccounts`**. Só permite excluir quando o saldo estiver zerado, conciliado, sem reservas e sem pagamentos ou saques em andamento. Recebimentos no cartão ainda retidos também impedem a exclusão. A resposta é `{ "ok": true }`.
+
+O registro é arquivado, preservando pagamentos e lançamentos para auditoria. Uma subconta arquivada não pode receber novas movimentações. A principal não pode ser excluída nem selecionada como subconta. Repetir a exclusão sem enviar o header da subconta já arquivada é idempotente.
+
+## Eventos e migração
+
+Os [webhooks](/webhooks) da conta recebem os eventos de suas subcontas. **`data.subaccountId`** identifica a subconta; é `null` para movimentações da principal. `operationId` permanece como identificador do contexto financeiro para compatibilidade. A assinatura e a política de tentativas permanecem as mesmas.
+
+O antigo sistema de múltiplas operações foi encerrado: `/operations`, `/operations/{id}` e suas variantes públicas não estão mais disponíveis. As operações secundárias existentes são convertidas em subcontas, preservando IDs, nomes, saldos e histórico. A principal atual é mantida. Chaves antigas com `operations` continuam autorizadas a gerenciar subcontas por compatibilidade; para novas chaves, selecione `subaccounts`.

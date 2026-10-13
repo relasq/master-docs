@@ -14,7 +14,7 @@ As respostas de erro usam JSON com `message` e `statusCode`. Erros de validaçã
 | `429` | Limite temporário de requisições. |
 | `503` | Serviço de pagamentos momentaneamente indisponível. |
 
-Limites atuais: **120 chamadas/minuto por key**, **10 criações de cobrança/minuto por conta**, **10 criações de checkout de cartão/15 minutos por conta**, **30 envios/hora por conta, compartilhados entre site e API**, **20 autorizações de rascunhos legados a cada 10 minutos**, **30 criações de negócio/hora**, **30 exclusões de negócio/hora** e **60 renomeações de negócio/hora**. Uma conta mantém entre **1 e 10 negócios incluindo a principal**. As transferências pelo site e pela API não exigem código de e-mail.
+Limites atuais: **120 chamadas/minuto por key**, **10 criações de cobrança/minuto por conta**, **10 criações de checkout de cartão/15 minutos por conta**, **30 envios/hora por conta, compartilhados entre site e API**, **20 autorizações de rascunhos legados a cada 10 minutos**, **30 criações de subconta/hora**, **30 exclusões de subconta/hora** e **60 renomeações de subconta/hora**. Cada conta possui uma única operação principal. Subcontas são criadas e administradas pela API. As transferências pelo site e pela API não exigem código de e-mail.
 
 Ao receber uma resposta incerta ou timeout após criar uma cobrança, repita **a mesma requisição com o mesmo `requestKey`**. Para cartão, a mesma referência retorna a operação sem repetir um checkout incerto; para transferências, consulte o ID antes de qualquer nova ação. Nunca troque o UUID para contornar um resultado incerto.
 
@@ -22,7 +22,7 @@ Ao receber uma resposta incerta ou timeout após criar uma cobrança, repita **a
 
 A administração pode pausar saques de toda a plataforma, apenas saques automáticos por API, criação de cobranças Pix ou criação de checkouts de cartão. O bloqueio global de saques prevalece sobre a liberação individual; liberar o controle global não remove bloqueios de contas. Consultas de status e webhooks continuam funcionando durante a pausa para conciliar solicitações já enviadas. Uma pausa não cancela uma transferência já enviada nem invalida um QR Code ou checkout já emitido.
 
-`GET /account` informa `withdrawalsFrozen`, `apiTransfersFrozen`, `pixChargesPaused` e `cardChargesPaused`. Trate a resposta `403` da criação como indisponibilidade e aguarde a liberação. Não tente contornar o bloqueio mudando de operação ou criando outra key.
+`GET /account` informa `withdrawalsFrozen`, `apiTransfersFrozen`, `pixChargesPaused` e `cardChargesPaused`. Trate a resposta `403` da criação como indisponibilidade e aguarde a liberação. Não tente contornar o bloqueio mudando de subconta ou criando outra key.
 
 ## Taxas da conta
 
