@@ -26,7 +26,7 @@ A resposta usa o mesmo formato das operações Pix, com `paymentMethod: "card"`,
 
 ## Aprovação e liquidação
 
-Consulte `GET /payments/{id}` ou processe o evento `payment.paid`. A Master acompanha o provedor por webhook, com consulta automática após 5 segundos sem atualização.
+Consulte `GET /payments/{id}` ou processe o evento `payment.paid`. A Master acompanha o pagamento por polling autenticado no backend, começando após 5 segundos. Quando necessário, consulta o checkout para obter o identificador do pagamento; a aprovação é verificada pela consulta de pagamento.
 
 | Campo | Significado |
 | --- | --- |
@@ -50,4 +50,4 @@ A tarifa padrão é **R$ 4,24 por cobrança aprovada**, podendo ser negociada po
 
 Sempre use o mesmo `requestKey` UUID para repetir os mesmos dados. A Master retorna a mesma operação. A integração de checkout não garante idempotência na criação: por isso, **a Master não repete automaticamente um POST de checkout com resultado incerto**. Nesse caso, a operação fica `unknown` e pode não ter link disponível. Consulte o mesmo ID e procure o suporte se a conciliação não recuperar o resultado. Criar outra referência pode duplicar a cobrança.
 
-Os eventos duplicados de cartão são conciliados uma única vez. A Master valida assinatura, identificador e valor com o provedor antes de registrar aprovação; nenhum endpoint permite marcar uma cobrança como paga manualmente.
+Consultas repetidas de cartão são conciliadas uma única vez. A Master valida identificador, método e valor na resposta autenticada antes de registrar aprovação; nenhum endpoint permite marcar uma cobrança como paga manualmente.

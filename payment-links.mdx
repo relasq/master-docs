@@ -20,7 +20,7 @@ O cliente abre `https://www.pagmaster.site/pay/IDENTIFICADOR_PUBLICO` sem precis
 
 No **Pix**, a página mostra o QR Code e o código copia e cola. No **cartão**, ela abre o checkout seguro em outra aba: a Pagmaster não coleta número completo do cartão, CVV ou validade do cartão nessa página. O cliente pode acompanhar a confirmação na página do link.
 
-O status segue a confirmação financeira existente: webhooks assinados e consultas autenticadas de conciliação, com primeira consulta após cinco segundos quando necessária. O navegador consulta a atualização a cada cinco segundos enquanto visível. Abrir o link ou clicar em pagar não confirma o pagamento.
+O status segue a confirmação financeira existente: polling autenticado de conciliação no backend, com primeira consulta agendada após cinco segundos e acompanhamento enquanto pendente ou incerto. O navegador consulta a atualização a cada cinco segundos enquanto visível. Abrir o link ou clicar em pagar não confirma o pagamento.
 
 <Warning>
   O prazo do link permite **iniciar** a cobrança. Depois de emitida, o Pix ou checkout tem seu próprio prazo, exibido quando informado pelo processamento. Expirar ou desativar um link não invalida um pagamento já emitido. Uma confirmação posterior continua sendo conciliada.
