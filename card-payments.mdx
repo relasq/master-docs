@@ -51,3 +51,7 @@ A tarifa padrão é **R$ 4,24 por cobrança aprovada**, podendo ser negociada po
 Sempre use o mesmo `requestKey` UUID para repetir os mesmos dados. A Master retorna a mesma operação. A integração de checkout não garante idempotência na criação: por isso, **a Master não repete automaticamente um POST de checkout com resultado incerto**. Nesse caso, a operação fica `unknown` e pode não ter link disponível. Consulte o mesmo ID e procure o suporte se a conciliação não recuperar o resultado. Criar outra referência pode duplicar a cobrança.
 
 Consultas repetidas de cartão são conciliadas uma única vez. A Master valida identificador, método e valor na resposta autenticada antes de registrar aprovação; nenhum endpoint permite marcar uma cobrança como paga manualmente.
+
+<Note>
+Cinco segundos são o intervalo de consulta agendado, não um prazo garantido de confirmação. O tempo de resposta da instituição, a fila de consultas e falhas de conexão podem ampliar a espera. Um status pago só é registrado após uma resposta autenticada e validada.
+</Note>
