@@ -38,3 +38,9 @@ Um segundo é o intervalo de consulta agendado para cobranças recentes ou acomp
 ## Acompanhamento prioritário
 
 Cobranças criadas nos últimos 30 minutos e cobranças consultadas ativamente recebem consultas com intervalo de 1 segundo. As demais continuam sendo verificadas a cada 30 segundos em uma fila separada. Abrir ou consultar uma cobrança pendente a coloca na fila rápida durante 30 segundos; novas consultas renovam esse período. Essa prioridade não ignora uma consulta já em andamento nem o intervalo de espera após uma falha real. A concorrência é limitada, e uma resposta lenta não prende o lote inteiro.
+
+## Integridade da confirmação
+
+A confirmação é vinculada à identidade financeira da movimentação. Uma resposta repetida para o mesmo pagamento não cria outro crédito. Uma identidade bancária Pix reutilizada por outro registro coloca a movimentação conflitante em análise, sem aprovar um segundo crédito. A conferência respeita conta e subconta, valor, método e taxa capturada na criação.
+
+Consultas rápidas dependem da capacidade disponível da integração. A Master coordena as chamadas entre servidores, prioriza cobranças ativas e respeita a espera informada após um limite externo; uma pausa não representa aprovação ou falha do pagamento.

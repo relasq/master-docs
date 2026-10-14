@@ -27,3 +27,9 @@ A administração pode pausar saques de toda a plataforma, apenas saques automá
 ## Taxas da conta
 
 As taxas podem ser atualizadas globalmente ou por usuário. `feeCents` é a taxa fixa de Pix e saque; `cardFeeCents` é a taxa fixa de cartão aprovado. Consulte os valores atuais em `GET /account`. Cada cobrança ou saque mantém o valor gravado na criação, mesmo após uma atualização das taxas. Os valores apresentados nos exemplos são ilustrativos. Um ajuste administrativo de saldo é um lançamento contábil separado e não representa um pagamento aprovado ou envio pela liquidante.
+
+## Movimentação em análise de integridade
+
+A Master confere identidade financeira, conta, método, valor e lançamentos antes de disponibilizar saldo. Uma identidade Pix reutilizada por outro registro impede o segundo crédito e pode retornar o aviso `Movimentação em análise de integridade.`. Consulte a movimentação original e entre em contato com o suporte; gerar novas referências não libera a análise. Repetir corretamente o mesmo `requestKey` mantém a operação original.
+
+O acompanhamento depende da capacidade da integração: as consultas são coordenadas entre servidores, com prioridade para cobranças ativas e respeito à espera solicitada em caso de limite externo. Durante uma pausa, preserve a referência; nenhum pagamento é marcado como aprovado ou recusado por falta de conexão.
