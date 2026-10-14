@@ -47,4 +47,4 @@ curl https://api.pagmaster.site/api/v1/public/payments/ID_DA_OPERACAO \
   -H "Authorization: Bearer $MASTER_API_KEY"
 ```
 
-O status `paid` confirma uma cobrança. Não existe chamada para aprovar o Pix manualmente. A Master agenda a primeira consulta de status após 5 segundos e acompanha pagamentos e saques por polling no backend, inclusive com o painel fechado. Para cartão, consulte [cartão de crédito](/card-payments): aprovação e disponibilidade do saldo são etapas distintas. Para notificações automáticas, configure um [webhook](/webhooks). Seu servidor deve verificar a assinatura antes de processar cada evento.
+O status `paid` confirma uma cobrança. Não existe chamada para aprovar o Pix manualmente. A Master agenda a primeira consulta de status após 1 segundo e acompanha pagamentos e saques por polling no backend, inclusive com o painel fechado. Para cartão, consulte [cartão de crédito](/card-payments): aprovação e disponibilidade do saldo são etapas distintas. Para notificações automáticas, configure um [webhook](/webhooks). Seu servidor deve verificar a assinatura antes de processar cada evento.

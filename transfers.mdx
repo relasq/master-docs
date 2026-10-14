@@ -36,7 +36,7 @@ O saldo bruto é reservado atomicamente antes do envio. Repetir os mesmos dados 
 
 Consulte `GET /payments/{id}` ou receba `transfer.completed` pelo [webhook](/webhooks). `pending` indica processamento; `completed` confirma o envio. A consulta não autoriza nem confirma manualmente um pagamento.
 
-A Master acompanha saques exclusivamente por **polling autenticado no backend**, consultando o envio pelo ID retornado na criação, com primeira consulta agendada após 5 segundos; falhas usam espera crescente por operação e o worker limita a concorrência. Esse acompanhamento também funciona sem um navegador aberto.
+A Master acompanha saques exclusivamente por **polling autenticado no backend**, consultando o envio pelo ID retornado na criação, com primeira consulta agendada após 1 segundo; falhas usam espera crescente por operação e o worker limita a concorrência. Esse acompanhamento também funciona sem um navegador aberto.
 
 <Warning>
 Um timeout ou `unknown` pode indicar que o Pix já foi enviado. Preserve o mesmo `requestKey` e consulte a mesma operação. Nunca gere outro UUID para substituir um envio incerto.
@@ -51,5 +51,5 @@ Um timeout ou `unknown` pode indicar que o Pix já foi enviado. Preserve o mesmo
 Na página **Transferir**, informe o valor e a chave Pix, confira a taxa e o líquido previsto e clique em **Transferir agora**. A sessão autenticada autoriza o envio diretamente, sem código de e-mail. A API key também autoriza o envio diretamente na criação. Ambos os canais reservam o saldo antes do envio, preservam a mesma referência nas repetições e respeitam os bloqueios administrativos. A mesma referência não deve ser usada em canais diferentes.
 
 <Note>
-Cinco segundos são o intervalo de consulta agendado, não um prazo garantido de confirmação. O tempo de resposta da instituição, a fila de consultas e falhas de conexão podem ampliar a espera. Um status pago só é registrado após uma resposta autenticada e validada.
+Um segundo é o intervalo de consulta agendado para cobranças recentes ou acompanhadas na tela, não um prazo garantido de confirmação. O tempo de resposta da instituição, a fila de consultas e falhas de conexão podem ampliar a espera. Um status pago só é registrado após uma resposta autenticada e validada.
 </Note>

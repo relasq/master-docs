@@ -26,7 +26,7 @@ A resposta usa o mesmo formato das operações Pix, com `paymentMethod: "card"`,
 
 ## Aprovação e liquidação
 
-Consulte `GET /payments/{id}` ou processe o evento `payment.paid`. A Master acompanha o pagamento por polling autenticado no backend, começando após 5 segundos. Quando necessário, consulta o checkout para obter o identificador do pagamento; a aprovação é verificada pela consulta de pagamento.
+Consulte `GET /payments/{id}` ou processe o evento `payment.paid`. A Master acompanha o pagamento por polling autenticado no backend, começando após 1 segundo. Quando necessário, consulta o checkout para obter o identificador do pagamento; a aprovação é verificada pela consulta de pagamento.
 
 | Campo | Significado |
 | --- | --- |
@@ -53,5 +53,5 @@ Sempre use o mesmo `requestKey` UUID para repetir os mesmos dados. A Master reto
 Consultas repetidas de cartão são conciliadas uma única vez. A Master valida identificador, método e valor na resposta autenticada antes de registrar aprovação; nenhum endpoint permite marcar uma cobrança como paga manualmente.
 
 <Note>
-Cinco segundos são o intervalo de consulta agendado, não um prazo garantido de confirmação. O tempo de resposta da instituição, a fila de consultas e falhas de conexão podem ampliar a espera. Um status pago só é registrado após uma resposta autenticada e validada.
+Um segundo é o intervalo de consulta agendado para cobranças recentes ou acompanhadas na tela, não um prazo garantido de confirmação. O tempo de resposta da instituição, a fila de consultas e falhas de conexão podem ampliar a espera. Um status pago só é registrado após uma resposta autenticada e validada.
 </Note>

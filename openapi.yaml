@@ -90,8 +90,8 @@ paths:
         - Pagamentos
       operationId: getPayment
       summary: Consultar pagamento
-      description: Exige read. Consulta da conta e contexto financeiro selecionado. Webhook primeiro; após 5 segundos sem atualização,
-        agenda consulta autenticada ao provedor com limite e backoff. Não aprova pagamentos manualmente.
+      description: Exige read. Consulta da conta e contexto financeiro selecionado. Polling autenticado no backend; cobranças recentes ou acompanhadas usam intervalo de 1 segundo.
+        Cobranças antigas usam uma fila separada; falhas têm backoff. Não aprova pagamentos manualmente.
       responses:
         "200":
           description: Operação encontrada
