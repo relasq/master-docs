@@ -13,6 +13,8 @@ Conecte este repositório ao projeto Mintlify e configure `docs.pagmaster.site` 
 
 ## Contrato
 
-As rotas públicas incluem consulta de conta e pagamentos, cobranças Pix, preparação/confirmação/cancelamento de transferências e listagem/criação/renomeação/exclusão de operações de negócio. `X-Master-Operation` seleciona o negócio; sem ele, usa a principal atual. Sempre permanece pelo menos um negócio ativo. As keys são geradas no painel web, em `https://www.pagmaster.site/dashboard/integrations/keys`.
+As rotas públicas incluem conta e pagamentos BRL, cobranças Pix e cartão, links de pagamento, saques automáticos e cripto com saldo USDT separado. Há uma única operação principal; subcontas são criadas pela API e selecionadas por `X-Master-Subaccount`. Sem o header, usa a principal. As keys são geradas em `https://www.pagmaster.site/dashboard/integrations/keys`.
+
+`crypto.mdx` e os seis endpoints `/crypto/*` do OpenAPI descrevem unidades, taxa de 3%, polling, redes, saldo, reservas e repetição segura. Valores USDT são inteiros em milionésimos, não centavos BRL. Saques cripto usam TRC-20.
 
 O OpenAPI documenta somente rotas de integração com bearer key. Rotas de sessão, administração e configuração do painel são internas à aplicação e estão descritas no repositório da API.

@@ -1,9 +1,9 @@
 openapi: 3.1.0
 info:
   title: Master API
-  version: 1.3.0
+  version: 1.4.0
   description: "API pública da Pagmaster: uma conta principal, subcontas com ledger próprio, cobranças Pix e cartão e saques
-    automáticos. Valores em centavos inteiros."
+    automáticos. BRL em centavos; cripto em milionésimos de USDT."
 servers:
   - url: https://api.pagmaster.site/api/v1/public
     description: Produção, após configurar DNS e HTTPS
@@ -26,6 +26,8 @@ tags:
     description: Saldos e históricos independentes da conta principal
   - name: Links de pagamento
     description: Links de cobrança de uso único com Pix ou cartão
+  - name: Cripto
+    description: Cobranças, saldo separado USDT e saques TRC-20
 paths:
   /account:
     get:
@@ -465,6 +467,208 @@ paths:
             schema:
               type: object
               additionalProperties: false
+  /crypto/account:
+    parameters:
+      - &a1
+        $ref: "#/components/parameters/SubaccountHeader"
+    get:
+      tags:
+        - Cripto
+      operationId: getCryptoAccount
+      summary: Consultar saldo USDT
+      description: Exige read. Saldo disponível e reservas próprios, em milionésimos
+        de USDT. Não é saldo BRL.
+      responses:
+        "200":
+          description: Resposta confirmada ou estado atual, sem cache.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CryptoAccount"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/RateLimit"
+  /crypto/payments:
+    parameters:
+      - *a1
+    get:
+      tags:
+        - Cripto
+      operationId: listCryptoPayments
+      summary: Listar movimentações cripto
+      description: Exige read. Até 100 recebimentos e saques do contexto selecionado.
+      responses:
+        "200":
+          description: Resposta confirmada ou estado atual, sem cache.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CryptoOperation"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/RateLimit"
+  /crypto/payments/{id}:
+    parameters:
+      - *a1
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      tags:
+        - Cripto
+      operationId: getCryptoPayment
+      summary: Consultar movimentação cripto
+      description: Exige read. UUID da Pagmaster. Polling autenticado respeita fila e
+        capacidade; não aprova manualmente.
+      responses:
+        "200":
+          description: Resposta confirmada ou estado atual, sem cache.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CryptoOperation"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/RateLimit"
+  /crypto/charges:
+    parameters:
+      - *a1
+    post:
+      tags:
+        - Cripto
+      operationId: createCryptoCharge
+      summary: Criar cobrança cripto
+      description: Exige charges. Taxa 3%, crédito USDT após confirmação. Preserve
+        requestKey. Um resultado unknown nunca deve ser substituído
+        automaticamente por outra referência.
+      responses:
+        "201":
+          description: Resposta confirmada ou estado atual, sem cache.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CryptoOperation"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          description: requestKey já utilizado com dados ou contexto diferentes.
+        "429":
+          $ref: "#/components/responses/RateLimit"
+        "503":
+          description: Integração de pagamentos indisponível.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CryptoChargeRequest"
+  /crypto/withdrawals/preview:
+    parameters:
+      - *a1
+    post:
+      tags:
+        - Cripto
+      operationId: previewCryptoWithdrawal
+      summary: Calcular saque USDT
+      description: Exige read. Não movimenta dinheiro. Calcula a taxa incluída de 3% e
+        o líquido previsto.
+      responses:
+        "200":
+          description: Resposta confirmada ou estado atual, sem cache.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CryptoPreview"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          description: requestKey já utilizado com dados ou contexto diferentes.
+        "429":
+          $ref: "#/components/responses/RateLimit"
+        "503":
+          description: Integração de pagamentos indisponível.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CryptoWithdrawalPreviewRequest"
+  /crypto/withdrawals:
+    parameters:
+      - *a1
+    post:
+      tags:
+        - Cripto
+      operationId: createCryptoWithdrawal
+      summary: Solicitar saque USDT TRC-20
+      description: Exige transfers. Reserva o bruto em USDT. Taxa 3% descontada, sem
+        código por e-mail. Bloqueios administrativos e saldo isolado são
+        verificados. Não repete POST externo incerto.
+      responses:
+        "201":
+          description: Resposta confirmada ou estado atual, sem cache.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CryptoOperation"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          description: requestKey já utilizado com dados ou contexto diferentes.
+        "429":
+          $ref: "#/components/responses/RateLimit"
+        "503":
+          description: Integração de pagamentos indisponível.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CryptoWithdrawalRequest"
 webhooks:
   masterPaymentEvent:
     post:
@@ -608,6 +812,262 @@ components:
           schema:
             $ref: "#/components/schemas/Error"
   schemas:
+    CryptoAccount:
+      type: object
+      required:
+        - operationId
+        - currency
+        - unitScale
+        - balanceUnits
+        - reservedUnits
+        - feePercent
+      properties:
+        operationId:
+          type: string
+          format: uuid
+        currency:
+          type: string
+          enum:
+            - usdt
+        unitScale:
+          type: integer
+          const: 1000000
+        balanceUnits:
+          type: integer
+          minimum: 0
+        reservedUnits:
+          type: integer
+          minimum: 0
+        feePercent:
+          type: number
+          const: 3
+        withdrawalFeePercent:
+          type: number
+          const: 3
+        minimumWithdrawalUnits:
+          type: integer
+          const: 10051547
+        maximumWithdrawalUnits:
+          type: integer
+          const: 2000000000
+        enabled:
+          type: boolean
+        withdrawalsFrozen:
+          type: boolean
+        apiTransfersFrozen:
+          type: boolean
+        payCurrencies:
+          type: array
+          items:
+            type: string
+        usdtNetworks:
+          type: array
+          items:
+            type: string
+    CryptoChargeRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - amountMinor
+        - currency
+        - payCurrency
+        - payerName
+        - description
+        - requestKey
+      properties:
+        amountMinor:
+          type: integer
+          minimum: 100
+          maximum: 200000
+          description: Centavos de USD (mín. 100) ou BRL (mín. 200).
+        currency:
+          type: string
+          enum:
+            - brl
+            - usd
+        payCurrency:
+          type: string
+          enum:
+            - usdt
+            - btc
+            - eth
+            - ltc
+            - trx
+            - sol
+            - doge
+            - xrp
+            - ada
+            - matic
+        network:
+          type: string
+          enum:
+            - trc20
+            - erc20
+            - bsc
+            - sol
+            - polygon
+          description: Apenas USDT. Padrão trc20.
+        payerName:
+          type: string
+          minLength: 2
+          maxLength: 100
+        description:
+          type: string
+          maxLength: 200
+        requestKey:
+          type: string
+          format: uuid
+    CryptoWithdrawalPreviewRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - amountUnits
+      properties:
+        amountUnits:
+          type: integer
+          minimum: 10051547
+          maximum: 2000000000
+          description: Débito bruto em milionésimos de USDT, incluindo a taxa.
+    CryptoWithdrawalRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - amountUnits
+        - address
+        - requestKey
+      properties:
+        amountUnits:
+          type: integer
+          minimum: 10051547
+          maximum: 2000000000
+        address:
+          type: string
+          pattern: ^T[1-9A-HJ-NP-Za-km-z]{33}$
+          description: Endereço Tron TRC-20. Checksum validado no servidor.
+        requestKey:
+          type: string
+          format: uuid
+    CryptoPreview:
+      type: object
+      properties:
+        currency:
+          type: string
+          const: usdt
+        unitScale:
+          type: integer
+          const: 1000000
+        network:
+          type: string
+          const: trc20
+        grossUnits:
+          type: integer
+        feeUnits:
+          type: integer
+        netUnits:
+          type: integer
+        feePercent:
+          type: number
+          const: 3
+        sufficientBalance:
+          type: boolean
+        withdrawalsFrozen:
+          type: boolean
+    CryptoOperation:
+      type: object
+      required:
+        - id
+        - kind
+        - status
+        - settlementCurrency
+        - unitScale
+      properties:
+        id:
+          type: string
+          format: uuid
+        operationId:
+          type: string
+          format: uuid
+        subaccountId:
+          type:
+            - string
+            - "null"
+          format: uuid
+        kind:
+          type: string
+          enum:
+            - deposit
+            - withdrawal
+        status:
+          type: string
+          enum:
+            - queued
+            - unknown
+            - pending
+            - paid
+            - completed
+            - failed
+            - expired
+            - cancelled
+        settlementCurrency:
+          type: string
+          const: usdt
+        unitScale:
+          type: integer
+          const: 1000000
+        amountMinor:
+          type:
+            - integer
+            - "null"
+        currency:
+          type: string
+          enum:
+            - brl
+            - usd
+            - usdt
+        grossUnits:
+          type:
+            - integer
+            - "null"
+        feeUnits:
+          type:
+            - integer
+            - "null"
+        netUnits:
+          type:
+            - integer
+            - "null"
+        feePercent:
+          type: number
+          const: 3
+        payCurrency:
+          type: string
+        network:
+          type:
+            - string
+            - "null"
+        payAddress:
+          type: string
+        payAmount:
+          type: string
+          description: Quantidade exata da moeda de pagamento em decimal.
+        address:
+          type: string
+        expiresAt:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        settledAt:
+          type:
+            - string
+            - "null"
+          format: date-time
+        notice:
+          type: string
     Account:
       type: object
       required:

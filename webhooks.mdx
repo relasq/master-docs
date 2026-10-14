@@ -15,6 +15,10 @@ No painel, abra **Integrações → Webhooks** e cadastre uma URL **HTTPS públi
 | `transfer.pending` | Transferência autorizada e em processamento. |
 | `transfer.completed` | Transferência confirmada. |
 | `transfer.failed` / `transfer.cancelled` | Transferência encerrada sem conclusão. |
+| `crypto.payment.pending` / `crypto.payment.paid` | Cobrança cripto criada ou confirmada com crédito USDT. |
+| `crypto.payment.failed` / `crypto.payment.expired` | Cobrança cripto encerrada sem pagamento. |
+| `crypto.withdrawal.pending` / `crypto.withdrawal.completed` | Saque USDT registrado ou confirmado. |
+| `crypto.withdrawal.failed` / `crypto.withdrawal.cancelled` | Saque USDT rejeitado; reserva local liberada após confirmação. |
 
 Cada POST usa JSON com `id` (ID do evento), `type`, `createdAt` e `data` (`id` do pagamento, `operationId` do negócio, `kind`, `status`, `amountCents`, `createdAt`, `updatedAt`). Os endpoints recebem eventos da principal e de todas as subcontas; `data.subaccountId` identifica a subconta e é `null` para a principal. `data.operationId` permanece como identificador do contexto financeiro. O mesmo evento mantém o mesmo corpo e ID nas tentativas de entrega.
 
@@ -23,6 +27,8 @@ Novos saques podem incluir `data.debitAmountCents` (total descontado), `data.fee
 Cartão usa os mesmos eventos `payment.*`, com `data.paymentMethod: "card"`, `feeCents`, `expectedNetAmountCents` e `releaseAt` quando disponível. `payment.paid` informa aprovação; o saldo permanece em retenção até a liberação confirmada e o crédito no ledger da subconta selecionada. Consulte `GET /payments/{id}` para `cardSettlementStatus`. Recusa com nova tentativa no checkout pode manter o estado pendente e não gerar um evento novo.
 
 ## Assinatura
+
+Eventos `crypto.*` usam `data.settlementCurrency: "usdt"`, `unitScale: 1000000`, `grossUnits`, `feeUnits` e `netUnits`. Esses valores são milionésimos de USDT, não centavos BRL. Consulte o [guia de cripto](/crypto) antes de processá-los. As mesmas regras de assinatura, entrega e deduplicação abaixo se aplicam.
 
 O header `X-Master-Signature` tem o formato `t=UNIX_SECONDS,v1=HEX_HMAC`. Calcule HMAC-SHA256 com o segredo do endpoint sobre **`t + "." + corpo bruto da requisição`**. Compare em tempo constante e rejeite timestamps com diferença superior a cinco minutos. Não analise e serialize novamente o JSON antes de verificar: isso altera os bytes assinados.
 

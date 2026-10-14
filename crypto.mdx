@@ -1,0 +1,153 @@
+---
+title: "Cripto e saldo USDT"
+description: "Crie cobranças em cripto, acompanhe a confirmação e saque USDT pela rede TRC-20."
+---
+
+Os valores confirmados entram em **saldo USDT próprio**, separado do saldo BRL. A conta principal e cada subconta possuem seus próprios recebimentos, reservas e histórico cripto. Não há conversão automática desse saldo para reais.
+
+**Base:** `https://api.pagmaster.site/api/v1/public`. Autentique com `Authorization: Bearer $MASTER_API_KEY`. Para uma subconta, envie `X-Master-Subaccount` em todas as chamadas, incluindo consultas.
+
+## Unidades e taxas
+
+| Campo | Unidade |
+| --- | --- |
+| `amountMinor` | Centavos da moeda de cobrança: `brl` ou `usd`. `2500` representa R$ 25 ou US$ 25. |
+| `grossUnits`, `feeUnits`, `netUnits`, `balanceUnits`, `amountUnits` | Milionésimos de USDT. Divida por `unitScale: 1000000` para exibir. |
+| `payAmount` | Quantidade da moeda que o cliente deve enviar; string decimal, sem conversão para centavos. |
+
+A taxa é **3% por recebimento confirmado e 3% por saque**, descontada do bruto. Os cálculos são feitos em unidades inteiras; a taxa é arredondada para cima em um milionésimo de USDT. Não aplique também a tarifa Pix ou cartão.
+
+Uma cobrança com cotação de **25 USDT** tem taxa de **0,75 USDT** e crédito de **24,25 USDT**. Um saque bruto de **11 USDT** tem taxa de **0,33 USDT** e entrega prevista de **10,67 USDT**. Exemplos ilustrativos.
+
+## Criar cobrança
+
+`POST /crypto/charges` exige escopo `charges`.
+
+```bash
+curl -X POST https://api.pagmaster.site/api/v1/public/crypto/charges \
+  -H "Authorization: Bearer $MASTER_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "amountMinor": 2500,
+    "currency": "usd",
+    "payCurrency": "usdt",
+    "network": "trc20",
+    "payerName": "Cliente",
+    "description": "Pedido 123",
+    "requestKey": "b9ae9a6d-f7d6-47c3-866c-a6d10c7a5eed"
+  }'
+```
+
+- `amountMinor`: inteiro. USD: 100–200000; BRL: 200–200000. Os mínimos específicos da moeda ou rede também podem limitar a criação.
+- `currency`: `brl` ou `usd`; obrigatória, indica a moeda do preço.
+- `payCurrency`: `usdt`, `btc`, `eth`, `ltc`, `trx`, `sol`, `doge`, `xrp`, `ada` ou `matic`.
+- `network`: apenas para USDT, `trc20`, `erc20`, `bsc`, `sol` ou `polygon`. Padrão `trc20`. Enviar rede para outra moeda retorna `400`.
+- `payerName`: 2–100 caracteres. `description`: 0–200 caracteres.
+- `requestKey`: UUID obrigatório. Use a mesma referência para repetir os mesmos dados.
+
+```json
+{
+  "id": "5b3aef8b-f4a7-4bf0-a43d-f52383d3bb25",
+  "kind": "deposit",
+  "status": "pending",
+  "settlementCurrency": "usdt",
+  "unitScale": 1000000,
+  "amountMinor": 2500,
+  "currency": "usd",
+  "grossUnits": 25000000,
+  "feeUnits": 750000,
+  "netUnits": 24250000,
+  "feePercent": 3,
+  "payCurrency": "usdt",
+  "network": "trc20",
+  "payAmount": "25.01",
+  "payAddress": "ENDERECO_GERADO_NA_COBRANCA",
+  "expiresAt": "2026-10-14T12:10:00.000Z",
+  "settledAt": null
+}
+```
+
+Resposta ilustrativa. Exiba **o endereço, a rede e a quantidade exatos da resposta**. A quantidade de pagamento pode diferir do valor do preço por cotação e custos da rede. O remetente deve considerar as taxas de sua carteira. Não envie na rede errada nem reutilize uma cotação vencida. A validade usual é 10 minutos; utilize `expiresAt` retornado.
+
+O endereço pode ser convertido em QR Code no seu frontend. Um QR contendo somente o endereço não preenche necessariamente o valor ou a rede na carteira.
+
+## Consultar e confirmar
+
+`GET /crypto/payments/{id}` exige `read` e recebe o **UUID da Pagmaster**, não um identificador externo. A Pagmaster consulta o processamento automaticamente no backend, mesmo com o painel fechado. A leitura pode realizar uma consulta vencida; respeita leases, filas, limites e pausas da integração.
+
+```bash
+curl https://api.pagmaster.site/api/v1/public/crypto/payments/5b3aef8b-f4a7-4bf0-a43d-f52383d3bb25 \
+  -H "Authorization: Bearer $MASTER_API_KEY"
+```
+
+Libere seu produto somente em **`status: "paid"`**. Não há rota de aprovação manual. Um envio na blockchain, `partially_paid`, a geração do endereço ou o vencimento local do relógio não autorizam crédito pela Pagmaster. Apenas a confirmação autenticada e validada do processamento gera o lançamento único.
+
+| Status | Significado |
+| --- | --- |
+| `queued` | Registrada, aguardando disponibilidade antes do envio. |
+| `unknown` | O envio pode ter ocorrido, mas a resposta não foi confirmada. Preserve a referência e procure o suporte; não crie outra cobrança para substituir. |
+| `pending` | Aguardando confirmação do pagamento ou envio. |
+| `paid` | Recebimento confirmado e líquido creditado em USDT. |
+| `completed` | Saque confirmado e débito concluído. |
+| `failed`, `expired`, `cancelled` | Movimentação encerrada sem conclusão. Reservas locais de saques rejeitados são liberadas após confirmação. |
+
+O polling de cripto é agendado em aproximadamente 5 segundos após cada consulta bem-sucedida. **Não é promessa de confirmação em 5 segundos**: confirmações de rede, tempo da integração e limites podem ampliar a espera. Um campo `notice` indica resultado incerto ou análise de integridade.
+
+## Saldo e histórico
+
+- `GET /crypto/account`: saldo disponível `balanceUnits`, reservas `reservedUnits`, taxas, moedas, redes e limites. Exige `read`.
+- `GET /crypto/payments`: até 100 movimentações cripto recentes do contexto selecionado. Inclui recebimentos e saques; exige `read`.
+- `GET /crypto/payments/{id}`: detalhes e consulta de status da movimentação daquele contexto.
+
+Essas rotas não expõem o saldo agregado de outras contas nem o saldo da liquidante. As rotas BRL existentes continuam usando centavos de reais; não some esses valores a USDT.
+
+## Prévia de saque
+
+`POST /crypto/withdrawals/preview` exige `read`. Não movimenta dinheiro.
+
+```bash
+curl -X POST https://api.pagmaster.site/api/v1/public/crypto/withdrawals/preview \
+  -H "Authorization: Bearer $MASTER_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"amountUnits":11000000}'
+```
+
+Retorna `grossUnits`, `feeUnits`, `netUnits`, `feePercent: 3`, `sufficientBalance`, `withdrawalsFrozen`, `currency: "usdt"`, `unitScale: 1000000` e `network: "trc20"`.
+
+## Solicitar saque
+
+`POST /crypto/withdrawals` exige `transfers`. O único destino suportado é uma carteira **USDT TRC-20**, com endereço Tron válido e checksum conferido. Não exige código por e-mail.
+
+```bash
+curl -X POST https://api.pagmaster.site/api/v1/public/crypto/withdrawals \
+  -H "Authorization: Bearer $MASTER_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "amountUnits":11000000,
+    "address":"SEU_ENDERECO_TRON_VALIDO",
+    "requestKey":"7643ca2e-09a9-4ca7-a625-88ef9a1cbb5d"
+  }'
+```
+
+O exemplo de endereço é um placeholder e será recusado. O débito bruto mínimo é **10,051547 USDT** e o máximo é **2000 USDT**. O mínimo acomoda a tarifa de 3% da Pagmaster e a solicitação mínima de 10 USDT exigida pelo processamento. Consulte os limites atualizados em `/crypto/account`.
+
+O saldo bruto é reservado atomicamente. A taxa está incluída no débito: não a some novamente. O dinheiro chega à carteira já com o desconto. O status inicial pode ser `pending`, `queued` ou `unknown`; consulte a mesma rota `/crypto/payments/{id}`. O processamento consulta seu histórico de saques, valida referência e valor, e somente então conclui o débito ou libera uma reserva rejeitada.
+
+Os bloqueios de saque da conta e da plataforma também valem para cripto; o bloqueio de saques pela API vale para esta rota. Saldo de outra conta, da principal ou em reais não complementa saldo USDT insuficiente.
+
+## Repetição e integridade
+
+A criação remota de cripto não documenta idempotência. A Pagmaster registra e reclama cada solicitação **antes** do POST externo e nunca o repete automaticamente após resultado incerto. Repetir a mesma `requestKey` retorna o mesmo registro; dados ou contexto diferentes retornam `409`. Uma solicitação que ainda não foi enviada pode aguardar em fila.
+
+Recebimentos e saques confirmados usam identidade financeira única e ledger em unidades inteiras. A varredura confere saldos e reservas; divergências bloqueiam novos saques daquela carteira sem alterar o saldo automaticamente. Resultados desconhecidos mantêm as reservas até confirmação ou investigação pelo suporte.
+
+## Webhooks para sua aplicação
+
+Os endpoints cadastrados em **Integrações → Webhooks** recebem eventos assinados:
+
+- `crypto.payment.pending`, `crypto.payment.paid`, `crypto.payment.failed`, `crypto.payment.expired`.
+- `crypto.withdrawal.pending`, `crypto.withdrawal.completed`, `crypto.withdrawal.failed`, `crypto.withdrawal.cancelled`.
+
+O envelope usa `id`, `type`, `createdAt`, `data` e a [mesma assinatura](/webhooks). Os dados usam **`settlementCurrency: "usdt"` e `unitScale: 1000000`**, com `grossUnits`, `feeUnits`, `netUnits`, `operationId` e `subaccountId`. Não interprete esses eventos como centavos BRL. Entregas são idempotentes por movimentação e tipo, mas sua aplicação também deve deduplicá-las.
+
+Esses são webhooks **enviados pela Pagmaster ao seu endpoint**. A confirmação financeira da Pagmaster continua baseada em polling autenticado, sem recebimento de webhook da liquidante.

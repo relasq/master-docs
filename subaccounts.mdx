@@ -60,9 +60,14 @@ Esse contexto funciona em **todos os endpoints financeiros da documentação**:
 | `POST /pix/charges` | QR Code e copia e cola com crédito destinado à subconta. |
 | `POST /card/charges` | Checkout com crédito na subconta após a liberação confirmada. |
 | `POST /pix/transfers` | Saque automático usando exclusivamente seu saldo disponível. |
+| `GET /crypto/account` e `/crypto/payments` | Saldo USDT e histórico cripto próprios da subconta. |
+| `POST /crypto/charges` | Cobrança cripto com crédito no saldo USDT da subconta. |
+| `POST /crypto/withdrawals` | Saque TRC-20 usando o saldo USDT da subconta. |
 | `POST /pix/transfers/{id}/confirm` ou `/cancel` | Somente rascunhos legados da subconta selecionada. |
 
 Os caminhos financeiros continuam relativos a `https://api.pagmaster.site/api/v1/public`. Não é preciso mudar o corpo das requisições.
+
+O saldo cripto é separado de BRL. A resposta de uma subconta inclui `cryptoBalanceUnits`, `cryptoReservedUnits`, `cryptoCurrency: "usdt"` e `cryptoUnitScale: 1000000`. Uma subconta com saldo ou movimentação cripto pendente não pode ser excluída.
 
 ```bash
 curl https://api.pagmaster.site/api/v1/public/account \
