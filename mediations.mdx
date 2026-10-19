@@ -1,0 +1,49 @@
+---
+title: "Mediações e retenções"
+description: "Acompanhe solicitações de reembolso e entenda o efeito no saldo disponível."
+---
+
+Uma mediação é um registro interno de análise de uma solicitação de reembolso vinculada a um recebimento Pix ou cartão **confirmado**. Ela pode ser aberta e atualizada pela administração. O titular acompanha os detalhes em **Pagamentos → Mediações**, incluindo recebimentos das suas subcontas.
+
+## Status
+
+| Status | Efeito |
+| --- | --- |
+| Pendente | O valor integral do recebimento fica reservado na conta ou subconta de origem. |
+| Falha | A retenção continua ativa, aguardando nova decisão administrativa. |
+| Concluída | Somente a reserva desta mediação é liberada. |
+
+As respostas ao solicitante ficam reservadas à IA da Pagmaster. A página permite acompanhar status e histórico; não permite enviar respostas, anexos ou aprovar um reembolso. Este recurso não implementa atendimento automatizado.
+
+## Como o saldo é protegido
+
+A retenção usa o **valor bruto integral** da transação, sem devolver taxas já cobradas. O saldo disponível nunca fica negativo. Se o saldo livre for menor que a retenção, recebimentos futuros cobrem a diferença antes de permitir novos saques. Isso vale para o painel e para a API.
+
+Por exemplo: um recebimento de R$ 100,00 gerou R$ 99,75 líquidos. Uma mediação desse recebimento reserva R$ 100,00. O disponível passa a zero; os próximos R$ 0,25 líquidos cobrem a diferença. Valores acima disso voltam a ficar disponíveis, respeitando outras reservas.
+
+- A reserva não movimenta dinheiro, não altera o status original do pagamento e **não envia reembolsos**.
+- Concluir uma mediação remove sua reserva; não cria um crédito novo. Se havia outras retenções ou saques reservados, esses valores continuam indisponíveis.
+- Falha não significa que o reembolso foi enviado. A reserva permanece até outra decisão.
+- Uma transação possui apenas uma mediação, que pode ser reaberta com justificativa.
+- Saques já enviados ou reservados antes da abertura não são cancelados retroativamente.
+- Retenções de uma subconta não consomem o saldo da conta principal nem de outra subconta.
+- Uma subconta com retenção ativa não pode ser excluída.
+- Recebimentos no cartão ainda sujeitos ao prazo de liberação continuam respeitando esse prazo, mesmo se a mediação for concluída.
+- Este recurso trata recebimentos em BRL. Saldos e movimentações cripto não são misturados.
+
+## Consultar pela integração
+
+`GET /api/v1/public/account` retorna o disponível já descontado das reservas. No retorno:
+
+| Campo | Significado |
+| --- | --- |
+| `balanceCents` | Saldo disponível em centavos de BRL, após todas as retenções e reservas. |
+| `heldBalanceCents` | Soma das retenções administrativas e de mediações na origem consultada. Pode superar o saldo contábil. |
+| `mediationHoldCents` | Parcela retida especificamente por mediações. |
+| `reservedWithdrawalCents` | Valor separado para saques já reservados. |
+
+Use `X-Master-Subaccount` para consultar o contexto de uma subconta. As alterações de mediação são restritas à administração autenticada e **não estão disponíveis por API key**. O usuário não tem uma rota de resposta ou decisão.
+
+## Histórico e segurança
+
+Cada abertura ou decisão registra motivo, horário e revisão. O motivo é visível ao usuário. Alterações concorrentes exigem a revisão atual e decisões repetidas não duplicam a reserva nem a liberação. O razão financeiro é preservado; as reservas são conciliadas com os registros ativos e divergências impedem novas movimentações até análise.

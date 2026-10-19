@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Master API
-  version: 1.4.0
+  version: 1.4.1
   description: "API pública da Pagmaster: uma conta principal, subcontas com ledger próprio, cobranças Pix e cartão e saques
     automáticos. BRL em centavos; cripto em milionésimos de USDT."
 servers:
@@ -1079,6 +1079,7 @@ components:
         - operationId
         - feeCents
         - heldBalanceCents
+        - mediationHoldCents
         - withdrawalsFrozen
         - minimumWithdrawalCents
         - maximumWithdrawalCents
@@ -1093,7 +1094,7 @@ components:
         balanceCents:
           type: integer
           example: 9750
-          description: Saldo disponível após reservas de saque, retenções administrativas e margem da Master
+          description: Saldo disponível após reservas de saque, retenções administrativas e de mediações, e margem da Master
         balanceUpdatedAt:
           type:
             - integer
@@ -1125,7 +1126,11 @@ components:
         heldBalanceCents:
           type: integer
           minimum: 0
-          description: Retenção administrativa da conta principal, em centavos
+          description: Retenções administrativas e de mediações no contexto consultado, em centavos; pode superar o saldo contábil
+        mediationHoldCents:
+          type: integer
+          minimum: 0
+          description: Valor integral reservado por mediações pendentes ou com falha; descontado do saldo disponível mesmo sem cobertura atual
         withdrawalsFrozen:
           type: boolean
           description: Bloqueio de saques da conta ou plataforma
