@@ -41,6 +41,7 @@
             "group": "Operação",
             "pages": [
               "webhooks",
+              "app-and-notifications",
               "assistant",
               "errors-and-limits"
             ]

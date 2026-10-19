@@ -1,0 +1,52 @@
+---
+title: "Aplicativo e notificações"
+description: "Instalação no iPhone, iPad, Android e computador, com avisos opcionais."
+---
+
+O aplicativo da Pagmaster é instalado pelo navegador. A instalação é gratuita, não requer APK no iPhone e usa os mesmos dados e a mesma sessão segura da plataforma. Acesse [Instalar Pagmaster](https://www.pagmaster.site/install).
+
+## iPhone e iPad
+
+1. Abra `https://www.pagmaster.site/install` no **Safari**.
+2. Abra **Compartilhar**, usando o menu do navegador quando necessário.
+3. Escolha **Adicionar à Tela de Início**, confirme **Adicionar** e mantenha **Abrir como App** ativo, se essa opção aparecer.
+4. Abra o novo ícone da Pagmaster e entre na conta.
+5. No convite de notificações, toque em **Ativar notificações** e aceite a permissão do sistema.
+
+O push requer iOS/iPadOS **16.4 ou superior** e o app instalado na tela inicial. A solicitação de permissão acontece somente depois do toque no botão. Instalar o app não autoriza notificações automaticamente.
+
+## Android e computador
+
+No Chrome ou Edge, use **Instalar Pagmaster** na página de instalação ou a opção de instalação do menu do navegador. A disponibilidade e o texto dessa opção dependem do navegador e do sistema.
+
+## Convite e preferências
+
+Ao abrir o app instalado em um dispositivo móvel compatível, depois dos avisos iniciais da conta, o painel oferece um convite para ativar push. Fechar o convite não impede a ativação posterior.
+
+Você encontra as preferências em **Minha conta → Aplicativo e notificações** e pelo menu de notificações do cabeçalho. Há também uma página de **Notificações**, que guarda avisos no painel mesmo que push esteja desativado.
+
+| Categoria | Quando aparece |
+| --- | --- |
+| Novos recebimentos | Confirmação de um recebimento Pix, cartão ou cripto. O aviso não altera prazos de disponibilidade do cartão nem converte USDT em BRL. |
+| Transferências | Conclusão, falha ou cancelamento de um envio. |
+| Resumo diário | A partir de 00h05, horário de Brasília, com o dia anterior. |
+| Resumo mensal | A partir de 00h10 do dia 1, horário de Brasília, com o mês anterior. |
+| Avisos da Pagmaster | Comunicados da administração e simulações explicitamente identificadas. |
+
+Os resumos consideram movimentações confirmadas em **BRL**, incluindo conta principal e subcontas. Cripto não é somada a reais. Após uma interrupção do serviço, o agendamento retoma o período completo mais recente, sem disparar todos os resumos antigos de uma vez. Os horários indicam o início do processamento; não há garantia de entrega em um segundo específico.
+
+## Privacidade e entrega
+
+- Os títulos usam um emoji ao final e a imagem da marca no ícone. A apresentação final depende do sistema; alguns aparelhos exibem o ícone instalado ou a identidade do navegador.
+- Valores financeiros ficam ocultos no push por padrão. Você pode habilitar a exibição e permitir que apareçam também na tela bloqueada.
+- Ao sair da conta, as inscrições vinculadas à sessão são desativadas. É possível reativar após entrar novamente.
+- Endpoints e chaves de inscrição são armazenados criptografados no servidor. A chave pública VAPID pode ser consultada por uma sessão autenticada; a chave privada nunca é enviada ao navegador.
+- A entrega depende de internet, permissão, bateria e políticas de iOS, Android ou navegador. “Aceita pelo serviço de push” não comprova que a pessoa viu o aviso.
+- O aplicativo não guarda páginas privadas, respostas da API ou dados financeiros em cache offline. É preciso conexão para consultar ou movimentar a conta.
+- Dispositivos expirados deixam de receber push. Você pode desativar um dispositivo nas preferências.
+
+## Simulações administrativas
+
+A administração pode selecionar uma conta e enviar **1 a 20 notificações de teste por lote**, com motivo de auditoria. O limite é de um lote a cada 5 minutos e 60 simulações por dia para cada conta. Push é opcional no lote e respeita a permissão do dispositivo e a preferência de avisos administrativos.
+
+Essas mensagens exibem **Simulação de notificação** e não geram recebimentos, saques, saldo ou lançamentos financeiros. O envio de testes é espaçado por dispositivo. Não existe uma API pública por chave para registrar aparelhos, alterar preferências do usuário ou disparar testes administrativos.
