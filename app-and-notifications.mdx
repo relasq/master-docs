@@ -31,7 +31,7 @@ Você encontra as preferências em **Minha conta → Aplicativo e notificações
 | Transferências | Solicitação em processamento, conclusão, falha ou cancelamento de um envio. Solicitação não significa conclusão. |
 | Resumo diário | A partir de 00h05, horário de Brasília, com o dia anterior. |
 | Resumo mensal | A partir de 00h10 do dia 1, horário de Brasília, com o mês anterior. |
-| Avisos da Pagmaster | Comunicados da administração e simulações explicitamente identificadas. |
+| Avisos da Pagmaster | Comunicados da administração e envios administrativos de teste. |
 
 Os resumos consideram movimentações confirmadas em **BRL**, incluindo conta principal e subcontas. Cripto não é somada a reais. Após uma interrupção do serviço, o agendamento retoma o período completo mais recente, sem disparar todos os resumos antigos de uma vez. Os horários indicam o início do processamento; não há garantia de entrega em um segundo específico.
 
@@ -49,4 +49,8 @@ Os resumos consideram movimentações confirmadas em **BRL**, incluindo conta pr
 
 A administração pode selecionar uma conta e enviar **1 a 20 notificações de teste por lote**, com motivo de auditoria. O limite é de um lote a cada 5 minutos e 60 simulações por dia para cada conta. Push é opcional no lote e respeita a permissão do dispositivo e a preferência de avisos administrativos.
 
-Essas mensagens exibem **Simulação de notificação** e não geram recebimentos, saques, saldo ou lançamentos financeiros. O envio de testes é espaçado por dispositivo. Não existe uma API pública por chave para registrar aparelhos, alterar preferências do usuário ou disparar testes administrativos.
+O administrador escolhe **Venda aprovada**, **Transferência concluída**, **Seu resumo do dia** ou **Seu resumo do mês**, informa um valor ilustrativo e confere a prévia antes do envio. O destinatário recebe o modelo escolhido, com a logo e o emoji, sem o título genérico de simulação. Os modelos compartilham os textos das notificações de produção.
+
+Esses envios **não geram recebimentos, saques, saldo ou lançamentos financeiros**. O caráter de teste, o tipo, o valor e o responsável ficam registrados na auditoria administrativa. Os links abrem a central de notificações, sem inventar uma transação nos detalhes. Valores no push continuam ocultos por padrão e só aparecem se o usuário ativar essa preferência.
+
+O envio de testes é espaçado por dispositivo. Não existe uma API pública por chave para registrar aparelhos, alterar preferências do usuário ou disparar testes administrativos.
