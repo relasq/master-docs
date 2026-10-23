@@ -32,6 +32,15 @@ Uma solicitação de `1000` centavos com taxa `25` retorna `debitAmountCents: 10
 
 O saldo bruto é reservado atomicamente antes do envio. Repetir os mesmos dados com o mesmo `requestKey` não reserva nem envia novamente. Saques recusados ou cancelados pelo provedor liberam a reserva sem taxa. Saques pendentes ou incertos continuam reservados até a conciliação.
 
+## Falha, cancelamento e devolução
+
+- Se o envio falhar ou for cancelado antes da conclusão, a reserva do valor total é liberada. Não há cobrança de taxa por esse envio.
+- Se uma transferência inicialmente concluída for posteriormente devolvida com status `failed` ou `cancelled`, o saldo debitado é restaurado integralmente, incluindo a taxa da Master. A operação passa para o status recebido, preservando o débito e a devolução no histórico contábil.
+- A devolução ocorre na mesma conta ou subconta de origem. Repetições e consultas simultâneas não devolvem o valor duas vezes. Outras retenções da conta continuam valendo.
+- `pending`, `unknown`, timeout, ausência de resposta ou resposta divergente não comprovam falha: nesses casos o valor continua reservado para impedir um segundo saque do mesmo dinheiro.
+
+O backend também consulta envios já concluídos, em segundo plano: agenda nova verificação após 5 minutos no primeiro dia e após 1 hora nos dias seguintes, com fila e limites de consultas. Uma devolução só altera o saldo após validar identidade, valor e referência do envio. Esses intervalos não garantem um prazo de processamento bancário.
+
 ## Consulta de status
 
 Consulte `GET /payments/{id}` ou receba `transfer.completed` pelo [webhook](/webhooks). `pending` indica processamento; `completed` confirma o envio. A consulta não autoriza nem confirma manualmente um pagamento.
